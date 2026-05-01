@@ -20,6 +20,15 @@ def upcoming_appointments(limit=40):
     )
 
 
+def appointments_between(start, end):
+    return list(
+        Appointment.objects.select_related("patient")
+        .filter(scheduled_for__gte=start, scheduled_for__lt=end)
+        .exclude(status=Appointment.Status.CANCELLED)
+        .order_by("scheduled_for")
+    )
+
+
 def upcoming_for_patient(patient_id):
     return list(
         Appointment.objects.select_related("patient")

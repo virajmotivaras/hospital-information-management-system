@@ -236,6 +236,89 @@ textarea:focus {
   grid-column: 1 / -1;
 }
 
+.calendar-toolbar {
+  align-items: flex-start;
+}
+
+.calendar-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.calendar-week {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(120px, 1fr));
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.calendar-day {
+  min-height: 420px;
+  border-right: 1px solid var(--line);
+  background: #fbfdfd;
+}
+
+.calendar-day:last-child {
+  border-right: 0;
+}
+
+.calendar-day.today .calendar-day-heading {
+  background: var(--soft);
+  color: var(--primary-strong);
+}
+
+.calendar-day-heading {
+  min-height: 64px;
+  padding: 10px;
+  border-bottom: 1px solid var(--line);
+  background: #f7fafb;
+}
+
+.calendar-day-heading strong {
+  display: block;
+  font-size: 14px;
+}
+
+.calendar-day-heading span {
+  display: block;
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.calendar-items {
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+}
+
+.calendar-appointment {
+  border-left: 4px solid var(--primary);
+  border-radius: 6px;
+  padding: 8px;
+  background: #e7f2f1;
+}
+
+.calendar-appointment strong {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 13px;
+}
+
+.calendar-appointment .meta {
+  line-height: 1.35;
+}
+
+.calendar-empty {
+  padding: 10px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
 @media (max-width: 720px) {
   .form-grid,
   .vitals,
@@ -247,5 +330,23 @@ textarea:focus {
 
   .queue-card {
     grid-template-columns: 1fr;
+  }
+
+  .calendar-controls {
+    justify-content: flex-start;
+  }
+
+  .calendar-week {
+    grid-template-columns: 1fr;
+  }
+
+  .calendar-day {
+    min-height: 160px;
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .calendar-day:last-child {
+    border-bottom: 0;
   }
 }

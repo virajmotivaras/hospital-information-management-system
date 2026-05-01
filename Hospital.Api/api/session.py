@@ -19,6 +19,7 @@ def session_context(request):
                 "roles": user_roles(request.user),
             },
             "permissions": {
+                "calendar": request.user.is_superuser or any(role in user_roles(request.user) for role in [ADMIN, DOCTOR, RECEPTION]),
                 "desk": request.user.is_superuser or any(role in user_roles(request.user) for role in [ADMIN, RECEPTION]),
                 "patients": request.user.is_superuser or any(role in user_roles(request.user) for role in [ADMIN, DOCTOR, RECEPTION]),
                 "appointments": request.user.is_superuser or any(role in user_roles(request.user) for role in [ADMIN, RECEPTION]),

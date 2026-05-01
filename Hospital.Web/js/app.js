@@ -4,9 +4,12 @@ const state = {
   selectedVisit: null,
   selectedPatientId: null,
   session: null,
+  calendarWeekStart: null,
+  calendarAppointments: [],
 };
 
 const titles = {
+  calendar: ["Calendar", "Weekly appointment view."],
   desk: ["Patient Desk", "Fast check-in for new and repeat patients."],
   patients: ["Patients", "Search and review registered patients."],
   appointments: ["Appointments", "Schedule patient visits."],
@@ -248,7 +251,11 @@ async function loadSession() {
   document.querySelector(".admin-link").classList.toggle("hidden", !state.session.permissions.admin);
   populateDepartmentSelects();
 
-  const active = document.querySelector(".nav-item[data-view]:not(.hidden)");
+  const roles = state.session.user.roles || [];
+  const preferredView = roles.includes("Doctor") && state.session.permissions.calendar ? "calendar" : "";
+  const active = preferredView
+    ? document.querySelector(`.nav-item[data-view="${preferredView}"]`)
+    : document.querySelector(".nav-item[data-view]:not(.hidden)");
   if (active) switchView(active.dataset.view);
 }
 
@@ -288,6 +295,85 @@ function patientLine(patient) {
 function departmentName(code) {
   const department = (state.session?.departments || []).find((item) => item.code === code);
   return department ? department.name : code;
+}
+
+function startOfWeek(date) {
+  const result = new Date(date);
+  result.setHours(0, 0, 0, 0);
+  const day = result.getDay();
+  const offset = day === 0 ? -6 : 1 - day;
+  result.setDate(result.getDate() + offset);
+  return result;
+}
+
+function addDays(date, days) {
+  const result = new Date(date);
+  result.setDate(result.getDate() + days);
+  return result;
+}
+
+function formatCalendarDay(date) {
+  return date.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
+}
+
+function formatCalendarTime(dateString) {
+  return new Date(dateString).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+}
+
+function sameLocalDate(first, second) {
+  return first.getFullYear() === second.getFullYear()
+    && first.getMonth() === second.getMonth()
+    && first.getDate() === second.getDate();
+}
+
+function renderCalendar() {
+  const weekStart = state.calendarWeekStart || startOfWeek(new Date());
+  state.calendarWeekStart = weekStart;
+  const weekEnd = addDays(weekStart, 6);
+  document.getElementById("calendar-week-label").textContent =
+    `${formatCalendarDay(weekStart)} - ${formatCalendarDay(weekEnd)}`;
+
+  const today = new Date();
+  const html = Array.from({ length: 7 }, (_item, index) => {
+    const day = addDays(weekStart, index);
+    const appointments = state.calendarAppointments.filter((appointment) =>
+      sameLocalDate(new Date(appointment.scheduled_for), day)
+    );
+    const items = appointments.length
+      ? appointments.map((appointment) => `
+        <article class="calendar-appointment">
+          <strong>${escapeHtml(formatCalendarTime(appointment.scheduled_for))} ${escapeHtml(appointment.patient.full_name)}</strong>
+          <div class="meta">
+            <span class="badge">${escapeHtml(departmentName(appointment.department))}</span>
+            <span class="badge">${escapeHtml(appointment.status)}</span>
+          </div>
+          <div class="meta">${appointment.reason ? escapeHtml(appointment.reason) : "No reason entered"}</div>
+        </article>
+      `).join("")
+      : `<div class="calendar-empty">No appointments</div>`;
+
+    return `
+      <section class="calendar-day ${sameLocalDate(day, today) ? "today" : ""}">
+        <div class="calendar-day-heading">
+          <strong>${escapeHtml(day.toLocaleDateString(undefined, { weekday: "long" }))}</strong>
+          <span>${escapeHtml(day.toLocaleDateString(undefined, { month: "short", day: "numeric" }))}</span>
+        </div>
+        <div class="calendar-items">${items}</div>
+      </section>
+    `;
+  }).join("");
+
+  document.getElementById("calendar-week").innerHTML = html;
+}
+
+async function loadCalendarAppointments() {
+  if (!state.session?.permissions?.calendar) return;
+  if (!state.calendarWeekStart) state.calendarWeekStart = startOfWeek(new Date());
+  const start = state.calendarWeekStart;
+  const end = addDays(start, 7);
+  const data = await http.request(`/api/appointments/?start=${encodeURIComponent(start.toISOString())}&end=${encodeURIComponent(end.toISOString())}`);
+  state.calendarAppointments = data.appointments;
+  renderCalendar();
 }
 
 function renderQueue() {
@@ -459,6 +545,9 @@ function switchView(viewName) {
   });
   document.getElementById("view-title").textContent = titles[viewName][0];
   document.getElementById("view-subtitle").textContent = titles[viewName][1];
+  if (viewName === "calendar") {
+    loadCalendarAppointments().catch((error) => setStatus(error.message, true));
+  }
 }
 
 function bindEvents() {
@@ -481,6 +570,18 @@ function bindEvents() {
 
   document.getElementById("refresh-queue").addEventListener("click", loadQueue);
   document.getElementById("refresh-appointments").addEventListener("click", loadAppointments);
+  document.getElementById("previous-week").addEventListener("click", () => {
+    state.calendarWeekStart = addDays(state.calendarWeekStart || startOfWeek(new Date()), -7);
+    loadCalendarAppointments().catch((error) => setStatus(error.message, true));
+  });
+  document.getElementById("current-week").addEventListener("click", () => {
+    state.calendarWeekStart = startOfWeek(new Date());
+    loadCalendarAppointments().catch((error) => setStatus(error.message, true));
+  });
+  document.getElementById("next-week").addEventListener("click", () => {
+    state.calendarWeekStart = addDays(state.calendarWeekStart || startOfWeek(new Date()), 7);
+    loadCalendarAppointments().catch((error) => setStatus(error.message, true));
+  });
   document.getElementById("close-patient-detail").addEventListener("click", () => {
     document.getElementById("patient-detail").classList.add("hidden");
     state.selectedPatientId = null;
@@ -528,6 +629,7 @@ function bindEvents() {
       });
       event.target.reset();
       await loadAppointments();
+      await loadCalendarAppointments();
       setStatus("Appointment saved");
     } catch (error) {
       setStatus(error.message, true);
@@ -593,7 +695,7 @@ async function start() {
   loadSymptomSuggestions();
   await loadSession();
   addMedicineRow({ frequency: "1-0-1" });
-  await Promise.all([loadQueue(), loadPatients(), loadAppointments()]);
+  await Promise.all([loadQueue(), loadPatients(), loadAppointments(), loadCalendarAppointments()]);
 }
 
 start().catch((error) => setStatus(error.message, true));

@@ -19,6 +19,7 @@
         </div>
       </div>
       <nav class="nav">
+        <button class="nav-item" data-view="calendar">Calendar</button>
         <button class="nav-item active" data-view="desk">Desk</button>
         <button class="nav-item" data-view="patients">Patients</button>
         <button class="nav-item" data-view="appointments">Appointments</button>
@@ -42,6 +43,23 @@
           <div class="status-pill" id="save-status">Ready</div>
         </div>
       </header>
+
+      <section class="view" id="view-calendar">
+        <section class="panel">
+          <div class="panel-heading calendar-toolbar">
+            <div>
+              <h2>Weekly Calendar</h2>
+              <span id="calendar-week-label">This week</span>
+            </div>
+            <div class="calendar-controls">
+              <button class="ghost" id="previous-week" type="button">Previous</button>
+              <button class="ghost" id="current-week" type="button">Today</button>
+              <button class="ghost" id="next-week" type="button">Next</button>
+            </div>
+          </div>
+          <div class="calendar-week" id="calendar-week"></div>
+        </section>
+      </section>
 
       <section class="view active" id="view-desk">
         <div class="grid two-columns">
