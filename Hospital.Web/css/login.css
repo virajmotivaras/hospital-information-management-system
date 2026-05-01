@@ -1,0 +1,57 @@
+.login-page {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: #f3f7f8;
+}
+
+.login-card {
+  width: min(420px, 100%);
+  display: grid;
+  gap: 24px;
+  padding: 28px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 16px 40px rgba(26, 42, 52, 0.12);
+}
+
+.brand {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.brand-mark {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border-radius: 6px;
+  background: #f2d2be;
+  color: #123236;
+  font-weight: 800;
+}
+
+.compact {
+  color: var(--ink);
+  margin-bottom: 0;
+}
+
+.compact small {
+  color: var(--muted);
+}
+
+.login-card form {
+  display: grid;
+  gap: 16px;
+}
+
+.login-error {
+  padding: 10px 12px;
+  border-radius: 6px;
+  color: #8f2424;
+  background: #f6e1de;
+  font-weight: 700;
+}

@@ -1,0 +1,11 @@
+Hospital.Api/.venv/
+Hospital.Api/.deps/
+Hospital.Api/.tmp/
+Hospital.Api/.pip-cache/
+Hospital.Api/db.sqlite3
+Hospital.Api/media/
+Hospital.Api/__pycache__/
+Hospital.Api/**/__pycache__/
+Hospital.Tests/**/__pycache__/
+.pytest_cache/
+*.pyc

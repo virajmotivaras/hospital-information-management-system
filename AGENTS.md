@@ -31,8 +31,6 @@ Model the repository after the user's familiar C#/.NET layered solution style:
 hospital-information-management-system/
   lib/
   Hospital.Api/
-  Hospital.Domain/
-  Hospital.Repository/
   Hospital.Tests/
   Hospital.Web/
   AGENTS.md
@@ -40,9 +38,7 @@ hospital-information-management-system/
 
 Use these folders as Python/Django equivalents of the .NET projects:
 
-- `Hospital.Api/`: Django project entry point, URL routing, API views/controllers, request/response serializers, middleware, app configuration, and server startup.
-- `Hospital.Domain/`: core business entities, domain services, validation rules, constants, enums, permissions, and business workflows that should not depend on web framework details where practical.
-- `Hospital.Repository/`: database access layer, Django models, query helpers, repositories, migrations, and persistence-related code.
+- `Hospital.Api/`: all backend code, including the Django project entry point, HTTP API, domain layer, repository layer, app configuration, and server startup.
 - `Hospital.Tests/`: automated tests for API, domain, repository, and frontend-adjacent behavior where useful.
 - `Hospital.Web/`: browser frontend built with HTML, CSS, and JavaScript.
 - `lib/`: shared scripts, deployment helpers, packaging files, reusable utilities, documentation fragments, or local tooling.
@@ -62,19 +58,31 @@ Hospital.Api/
     urls.py
     wsgi.py
     asgi.py
-  apps/
+  api/
     patients/
     appointments/
     staff/
     billing/
     inventory/
+  domain/
+    patients/
+    appointments/
+    staff/
+    billing/
+    common/
+  repository/
+    models/
+    repositories/
+    migrations/
+    queries/
 ```
 
 Backend rules:
 
 - Keep HTTP concerns in `Hospital.Api/`.
-- Keep business rules in `Hospital.Domain/`.
-- Keep persistence concerns in `Hospital.Repository/`.
+- Keep API request/response handling in `Hospital.Api/api/`.
+- Keep business rules in `Hospital.Api/domain/`.
+- Keep persistence concerns in `Hospital.Api/repository/`.
 - Do not put large business workflows directly inside Django views.
 - Use Django REST Framework if building JSON APIs.
 - Use class-based services for non-trivial workflows.
@@ -85,10 +93,10 @@ Backend rules:
 
 ## Domain Layer Guidance
 
-`Hospital.Domain/` should contain business language and hospital concepts, for example:
+`Hospital.Api/domain/` should contain business language and hospital concepts, for example:
 
 ```text
-Hospital.Domain/
+Hospital.Api/domain/
   patients/
     entities.py
     services.py
@@ -117,10 +125,10 @@ Avoid importing Django views from this layer. If Django models are needed, keep 
 
 ## Repository Layer Guidance
 
-`Hospital.Repository/` should own database-facing implementation details:
+`Hospital.Api/repository/` should own database-facing implementation details:
 
 ```text
-Hospital.Repository/
+Hospital.Api/repository/
   models/
   migrations/
   repositories/

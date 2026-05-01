@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Login | Hospital Management</title>
+    <link rel="stylesheet" href="/static/css/base.css">
+    <link rel="stylesheet" href="/static/css/login.css">
+  </head>
+  <body class="login-page">
+    <main class="login-card">
+      <div class="brand compact">
+        <span class="brand-mark">H</span>
+        <div>
+          <strong>Hospital Desk</strong>
+          <small>Staff login</small>
+        </div>
+      </div>
+      <form method="post">
+        {% csrf_token %}
+        {% if error %}<div class="login-error">{{ error }}</div>{% endif %}
+        <label>
+          Username
+          <input name="username" autocomplete="username" required autofocus>
+        </label>
+        <label>
+          Password
+          <input name="password" type="password" autocomplete="current-password" required>
+        </label>
+        <button class="primary" type="submit">Log In</button>
+      </form>
+    </main>
+  </body>
+</html>

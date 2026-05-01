@@ -1,0 +1,91 @@
+body {
+  margin: 0;
+  background: #eef2f4;
+  color: #111;
+  font-family: "Segoe UI", Arial, sans-serif;
+}
+
+.print-page {
+  width: 210mm;
+  min-height: 297mm;
+  margin: 0 auto;
+  padding: 22mm;
+  background: #fff;
+}
+
+.print-header,
+.patient-block,
+footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.print-header {
+  align-items: flex-start;
+  border-bottom: 2px solid #111;
+  padding-bottom: 14px;
+}
+
+.print-header h1 {
+  margin: 0;
+}
+
+.print-logo {
+  max-width: 90px;
+  max-height: 70px;
+  object-fit: contain;
+  margin-bottom: 8px;
+}
+
+.patient-block {
+  flex-wrap: wrap;
+  margin: 22px 0;
+  padding: 12px;
+  border: 1px solid #999;
+}
+
+h2 {
+  margin: 20px 0 8px;
+  font-size: 16px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  border: 1px solid #999;
+  padding: 8px;
+  text-align: left;
+}
+
+footer {
+  margin-top: 40px;
+}
+
+.signature {
+  min-width: 180px;
+  padding-top: 36px;
+  border-top: 1px solid #111;
+  text-align: center;
+}
+
+@media print {
+  body {
+    background: #fff;
+  }
+
+  button {
+    display: none;
+  }
+
+  .print-page {
+    margin: 0;
+    padding: 12mm;
+    width: auto;
+    min-height: auto;
+  }
+}

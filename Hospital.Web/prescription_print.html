@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Prescription</title>
+    <link rel="stylesheet" href="/static/css/print.css">
+  </head>
+  <body>
+    <main class="print-page">
+      <header class="print-header">
+        <div>
+          {% if hospital.logo %}<img class="print-logo" src="{{ hospital.logo.url }}" alt="">{% endif %}
+          <h1>{{ hospital.hospital_name }}</h1>
+          <p>{{ hospital.tagline }}</p>
+          {% if hospital.address %}<p>{{ hospital.address|linebreaksbr }}</p>{% endif %}
+          {% if hospital.phone_number %}<p>{{ hospital.phone_number }}</p>{% endif %}
+        </div>
+        <button onclick="window.print()">Print</button>
+      </header>
+
+      <section class="patient-block">
+        <div><strong>Patient:</strong> {{ prescription.patient.full_name }}</div>
+        <div><strong>Age:</strong> {{ prescription.patient.age_years|default:"" }}</div>
+        <div><strong>Department:</strong> {{ prescription.patient.get_department_display }}</div>
+        <div><strong>Date:</strong> {{ prescription.created_at|date:"Y-m-d H:i" }}</div>
+      </section>
+
+      <section>
+        <h2>Diagnosis</h2>
+        <p>{{ prescription.diagnosis|linebreaksbr }}</p>
+      </section>
+
+      <section>
+        <h2>Medicines</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Medicine</th>
+              <th>Dosage</th>
+              <th>Frequency</th>
+              <th>Duration</th>
+              <th>Instructions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in prescription.items.all %}
+            <tr>
+              <td>{{ item.medicine_name }}</td>
+              <td>{{ item.dosage }}</td>
+              <td>{{ item.frequency }}</td>
+              <td>{{ item.duration }}</td>
+              <td>{{ item.instructions }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </section>
+
+      <section>
+        <h2>Advice</h2>
+        <p>{{ prescription.advice|linebreaksbr }}</p>
+      </section>
+
+      <footer>
+        <div><strong>Follow-up:</strong> {{ prescription.follow_up_date|default:"As advised" }}</div>
+        <div class="signature">Dr. {{ prescription.doctor_name }}</div>
+      </footer>
+    </main>
+  </body>
+</html>

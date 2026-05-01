@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Hospital Management</title>
+    <link rel="stylesheet" href="/static/css/base.css">
+    <link rel="stylesheet" href="/static/css/layout.css">
+    <link rel="stylesheet" href="/static/css/components.css">
+  </head>
+  <body>
+    <aside class="sidebar">
+      <div class="brand">
+        <span class="brand-mark" id="brand-mark">H</span>
+        <img class="brand-logo" id="brand-logo" alt="" hidden>
+        <div>
+          <strong id="brand-name">Hospital Desk</strong>
+          <small id="brand-tagline">Gynecology and Pediatrics</small>
+        </div>
+      </div>
+      <nav class="nav">
+        <button class="nav-item active" data-view="desk">Desk</button>
+        <button class="nav-item" data-view="patients">Patients</button>
+        <button class="nav-item" data-view="appointments">Appointments</button>
+        <button class="nav-item" data-view="prescription">Prescription</button>
+        <a class="nav-item admin-link" href="/admin/">Admin</a>
+        <a class="nav-item" href="/logout/">Logout</a>
+      </nav>
+    </aside>
+
+    <main class="shell">
+      <header class="topbar">
+        <div>
+          <h1 id="view-title">Patient Desk</h1>
+          <p id="view-subtitle">Fast check-in for new and repeat patients.</p>
+        </div>
+        <div class="topbar-actions">
+          <div class="user-pill" id="user-pill">Signed in</div>
+          <div class="status-pill" id="save-status">Ready</div>
+        </div>
+      </header>
+
+      <section class="view active" id="view-desk">
+        <div class="grid two-columns">
+          <section class="panel">
+            <div class="panel-heading">
+              <h2>Quick Check-In</h2>
+              <span>Minimum details first</span>
+            </div>
+            <form id="checkin-form" class="form-grid">
+              <label>
+                Patient name
+                <input name="full_name" autocomplete="name" required placeholder="Name spoken by patient">
+              </label>
+              <label>
+                Mobile
+                <input name="phone_number" inputmode="tel" placeholder="Optional, helps find repeat patients">
+              </label>
+              <label>
+                Department
+                <select name="department">
+                  <option value="GYNECOLOGY">Gynecology</option>
+                  <option value="PEDIATRICS">Pediatrics</option>
+                </select>
+              </label>
+              <label>
+                Age
+                <input name="age_years" type="number" min="0" max="130" placeholder="Optional">
+              </label>
+              <label>
+                Gender
+                <select name="gender">
+                  <option value="NOT_SPECIFIED">Not specified</option>
+                  <option value="FEMALE">Female</option>
+                  <option value="MALE">Male</option>
+                  <option value="OTHER">Other</option>
+                </select>
+              </label>
+              <label>
+                Parent/guardian
+                <input name="guardian_name" placeholder="Useful for pediatric patients">
+              </label>
+              <label class="wide">
+                Reason for visit
+                <input name="reason" placeholder="Fever, antenatal checkup, follow-up...">
+              </label>
+              <div class="vitals wide">
+                <label>
+                  Temp C
+                  <input name="temperature_c" inputmode="decimal" placeholder="Optional">
+                </label>
+                <label>
+                  Weight kg
+                  <input name="weight_kg" inputmode="decimal" placeholder="Optional">
+                </label>
+                <label>
+                  BP
+                  <input name="blood_pressure" placeholder="Optional">
+                </label>
+              </div>
+              <button class="primary wide" type="submit">Check In Patient</button>
+            </form>
+          </section>
+
+          <section class="panel">
+            <div class="panel-heading">
+              <h2>Waiting Queue</h2>
+              <button class="ghost" id="refresh-queue" type="button">Refresh</button>
+            </div>
+            <div id="queue-list" class="stack"></div>
+          </section>
+        </div>
+      </section>
+
+      <section class="view" id="view-patients">
+        <section class="panel">
+          <div class="panel-heading">
+            <h2>Patients</h2>
+            <input id="patient-search" class="search" placeholder="Search name, mobile, guardian">
+          </div>
+          <div id="patient-list" class="table-list"></div>
+        </section>
+      </section>
+
+      <section class="view" id="view-appointments">
+        <div class="grid two-columns">
+          <section class="panel">
+            <div class="panel-heading">
+              <h2>Schedule Appointment</h2>
+              <span>Creates or updates patient</span>
+            </div>
+            <form id="appointment-form" class="form-grid">
+              <label>
+                Patient name
+                <input name="full_name" required>
+              </label>
+              <label>
+                Mobile
+                <input name="phone_number" inputmode="tel">
+              </label>
+              <label>
+                Department
+                <select name="department">
+                  <option value="GYNECOLOGY">Gynecology</option>
+                  <option value="PEDIATRICS">Pediatrics</option>
+                </select>
+              </label>
+              <label>
+                Date and time
+                <input name="scheduled_for" type="datetime-local" required>
+              </label>
+              <label class="wide">
+                Reason
+                <input name="reason">
+              </label>
+              <button class="primary wide" type="submit">Save Appointment</button>
+            </form>
+          </section>
+          <section class="panel">
+            <div class="panel-heading">
+              <h2>Upcoming</h2>
+              <button class="ghost" id="refresh-appointments" type="button">Refresh</button>
+            </div>
+            <div id="appointment-list" class="stack"></div>
+          </section>
+        </div>
+      </section>
+
+      <section class="view" id="view-prescription">
+        <div class="grid two-columns">
+          <section class="panel">
+            <div class="panel-heading">
+              <h2>Prescription</h2>
+              <span id="selected-patient-label">Select from queue</span>
+            </div>
+            <form id="prescription-form" class="form-grid">
+              <input type="hidden" name="patient_id">
+              <input type="hidden" name="visit_id">
+              <label>
+                Doctor
+                <input name="doctor_name" required placeholder="Doctor name">
+              </label>
+              <label>
+                Follow-up
+                <input name="follow_up_date" type="date">
+              </label>
+              <label class="wide">
+                Diagnosis
+                <textarea name="diagnosis" rows="3"></textarea>
+              </label>
+              <label class="wide">
+                Advice
+                <textarea name="advice" rows="3"></textarea>
+              </label>
+              <div class="wide medicine-list" id="medicine-list"></div>
+              <button class="ghost wide" id="add-medicine" type="button">Add Medicine</button>
+              <button class="primary wide" type="submit">Save and Print Prescription</button>
+            </form>
+          </section>
+          <section class="panel">
+            <div class="panel-heading">
+              <h2>Consultation Queue</h2>
+              <span>Pick a patient</span>
+            </div>
+            <div id="prescription-queue" class="stack"></div>
+          </section>
+        </div>
+      </section>
+    </main>
+
+    <script src="/static/js/api/http.js"></script>
+    <script src="/static/js/app.js"></script>
+  </body>
+</html>
