@@ -7,5 +7,7 @@ Hospital.Api/media/
 Hospital.Api/__pycache__/
 Hospital.Api/**/__pycache__/
 Hospital.Tests/**/__pycache__/
+lib/build/
+lib/dist/data/
 .pytest_cache/
 *.pyc

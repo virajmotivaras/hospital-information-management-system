@@ -4,7 +4,7 @@ import os
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 REPO_DIR = BASE_DIR.parent
-FRONTEND_DIR = REPO_DIR / "Hospital.Web"
+FRONTEND_DIR = Path(os.environ.get("HOSPITAL_FRONTEND_DIR", REPO_DIR / "Hospital.Web"))
 
 SECRET_KEY = os.environ.get("HOSPITAL_SECRET_KEY", "dev-only-change-before-deployment")
 DEBUG = os.environ.get("HOSPITAL_DEBUG", "1") == "1"
