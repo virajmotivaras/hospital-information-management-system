@@ -2,6 +2,13 @@
 
 These instructions define the preferred project shape and coding style for this repository. Follow them when creating or modifying the hospital management system.
 
+## Workspace Boundary
+
+- All agent changes and modifications must stay inside `C:\Viraj\Timepass\hospital-information-management-system`.
+- Do not create, edit, move, or delete files outside this folder unless the user explicitly grants permission first.
+- If a task appears to require changes outside this folder, stop and ask the user for permission before proceeding.
+- Reading outside this folder should also be avoided unless it is clearly necessary for the user's request or the user provides the path.
+
 ## Product Direction
 
 - Build a locally hosted hospital information management system.
@@ -200,3 +207,147 @@ For final Windows deployment:
 - Avoid large files that mix UI, API, database, and business rules.
 - Write comments only when they clarify non-obvious business or technical decisions.
 - Preserve this layered structure unless a Django convention clearly makes a small exception more maintainable.
+
+
+## Multi-Agent Collaboration Guidelines
+
+When multiple agents are working on the same project, they must collaborate in a way that avoids duplication, conflicting changes, and fragmented design decisions. Agents should treat the project as a shared system, not as isolated tasks.
+
+### 1. Shared Project Understanding
+
+Before making changes, every agent must understand:
+
+- the project goal
+- the current architecture
+- the assigned scope of work
+- dependencies between tasks
+- existing coding conventions
+- known constraints and assumptions
+
+Agents should read the relevant documentation, source files, issues, and prior agent notes before starting implementation.
+
+### 2. Clear Ownership
+
+Each agent should own a clearly defined area of responsibility.
+
+Examples:
+
+- one agent handles backend APIs
+- one agent handles frontend UI
+- one agent handles tests
+- one agent handles documentation
+- one agent reviews architecture and integration risks
+
+Agents must avoid editing the same files unless coordination is required. When shared files must be changed, agents should explicitly document why the change is needed.
+
+### 3. Communicate Before Changing Shared Interfaces
+
+Agents must coordinate before changing anything that affects other agents, including:
+
+- API contracts
+- database schemas
+- shared types or interfaces
+- configuration files
+- build scripts
+- authentication or authorization logic
+- common utility functions
+- public component props
+- test fixtures
+
+Any interface change must include a short explanation of:
+
+- what changed
+- why it changed
+- which parts of the project are affected
+- what other agents may need to update
+
+### 4. Complement, Do Not Duplicate
+
+Agents should check existing work before starting a task.
+
+Do not create a new implementation if another agent has already created a suitable one. Prefer extending or reusing existing code over introducing parallel solutions.
+
+Before adding new utilities, abstractions, components, or services, agents should search the codebase for similar existing functionality.
+
+### 5. Keep Work Incremental
+
+Agents should make small, focused changes that are easy to review and integrate.
+
+Each change should have a clear purpose. Avoid large unrelated refactors while implementing a feature unless the refactor is required for correctness or maintainability.
+
+When a larger change is necessary, break it into smaller steps and document the sequence.
+
+### 6. Record Decisions and Assumptions
+
+Each agent should document important decisions in a shared notes section, task log, pull request description, or relevant project documentation.
+
+Record:
+
+- design decisions
+- trade-offs considered
+- assumptions made
+- unresolved questions
+- risks or follow-up tasks
+
+Do not leave important reasoning hidden only in conversation history.
+
+### 7. Maintain Consistent Style
+
+Agents must follow the existing project style.
+
+This includes:
+
+- naming conventions
+- folder structure
+- formatting rules
+- error-handling patterns
+- testing style
+- logging conventions
+- dependency usage
+
+Do not introduce a new library, framework, or architectural pattern without a clear reason.
+
+### 8. Integration Awareness
+
+Agents must consider how their changes affect the whole project.
+
+Before finishing a task, each agent should verify:
+
+- the project still builds
+- relevant tests pass
+- changed interfaces are documented
+- dependent code is updated
+- no duplicate or conflicting implementation was introduced
+- no unrelated behavior was changed accidentally
+
+### 9. Handoff Notes
+
+When an agent completes work, it should leave a concise handoff note containing:
+
+- what was changed
+- files or modules touched
+- tests run
+- known limitations
+- follow-up work needed
+- anything another agent must know before continuing
+
+Example:
+
+```md
+### Handoff Note
+
+Completed:
+- Added user profile API endpoint.
+- Updated `UserService` and `UserRepository`.
+- Added unit tests for success and not-found cases.
+
+Tests run:
+- `npm test user-service`
+- `npm run lint`
+
+Notes:
+- Frontend agent can now consume `GET /api/users/:id`.
+- Response shape is documented in `docs/api/users.md`.
+
+Follow-up:
+- Add authorization checks once the permissions model is finalized.
