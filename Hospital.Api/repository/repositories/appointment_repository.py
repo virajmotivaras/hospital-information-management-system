@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 from django.utils import timezone
 
 from repository.models import Appointment
@@ -26,6 +28,21 @@ def appointments_between(start, end):
         .filter(scheduled_for__gte=start, scheduled_for__lt=end)
         .exclude(status=Appointment.Status.CANCELLED)
         .order_by("scheduled_for")
+    )
+
+
+def find_conflicting_appointment(start, duration_minutes):
+    end = start + timedelta(minutes=duration_minutes)
+    existing_start_floor = start - timedelta(minutes=duration_minutes)
+    return (
+        Appointment.objects.select_related("patient")
+        .filter(
+            status=Appointment.Status.SCHEDULED,
+            scheduled_for__lt=end,
+            scheduled_for__gt=existing_start_floor,
+        )
+        .order_by("scheduled_for")
+        .first()
     )
 
 

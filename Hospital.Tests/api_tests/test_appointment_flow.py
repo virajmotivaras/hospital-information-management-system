@@ -5,7 +5,7 @@ from django.test import Client, TestCase
 from django.contrib.auth.models import Group, User
 from django.utils import timezone
 
-from repository.models import Appointment, Department, Patient
+from repository.models import Appointment, Department, HospitalProfile, Patient
 
 
 class AppointmentApiTests(TestCase):
@@ -85,3 +85,83 @@ class AppointmentApiTests(TestCase):
         )
 
         self.assertEqual(create_response.status_code, 403)
+
+    def test_overlapping_appointment_is_rejected_using_configured_duration(self):
+        HospitalProfile.objects.create(appointment_duration_minutes=45)
+        patient = Patient.objects.create(full_name="Existing Patient", department="GENERAL")
+        start = timezone.now() + timedelta(days=2)
+        Appointment.objects.create(
+            patient=patient,
+            department="GENERAL",
+            scheduled_for=start,
+            reason="Existing slot",
+        )
+
+        response = self.client.post(
+            "/api/appointments/",
+            data=json.dumps(
+                {
+                    "full_name": "New Patient",
+                    "department": "GENERAL",
+                    "scheduled_for": (start + timedelta(minutes=30)).isoformat(),
+                    "reason": "Conflicting slot",
+                }
+            ),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json()["field"], "scheduled_for")
+        self.assertEqual(Appointment.objects.count(), 1)
+
+    def test_overlap_error_uses_local_appointment_time(self):
+        HospitalProfile.objects.create(appointment_duration_minutes=30)
+        patient = Patient.objects.create(full_name="Local Time Patient", department="GENERAL")
+        Appointment.objects.create(
+            patient=patient,
+            department="GENERAL",
+            scheduled_for="2026-05-09T08:40:00+00:00",
+            reason="Stored in UTC",
+        )
+
+        response = self.client.post(
+            "/api/appointments/",
+            data=json.dumps(
+                {
+                    "full_name": "New Patient",
+                    "department": "GENERAL",
+                    "scheduled_for": "2026-05-09T08:43:00+00:00",
+                }
+            ),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("2026-05-09 10:40", response.json()["error"])
+
+    def test_back_to_back_appointment_is_allowed_after_configured_duration(self):
+        HospitalProfile.objects.create(appointment_duration_minutes=30)
+        patient = Patient.objects.create(full_name="Existing Patient", department="GENERAL")
+        start = timezone.now() + timedelta(days=3)
+        Appointment.objects.create(
+            patient=patient,
+            department="GENERAL",
+            scheduled_for=start,
+            reason="Existing slot",
+        )
+
+        response = self.client.post(
+            "/api/appointments/",
+            data=json.dumps(
+                {
+                    "full_name": "Next Patient",
+                    "department": "GENERAL",
+                    "scheduled_for": (start + timedelta(minutes=30)).isoformat(),
+                    "reason": "Next slot",
+                }
+            ),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(Appointment.objects.count(), 2)

@@ -211,10 +211,11 @@ Admin workflow:
 4. Open `Hospital profile`.
 5. Enter the backup folder path.
 6. Save.
-7. Select the hospital profile row.
-8. Choose `Create database backup now`.
+7. Open `Backup records`.
+8. Click `Create backup now`.
 
 The system copies the current SQLite database file into that folder with a timestamped name.
+The `Backup records` page shows the backup history after backups are created.
 
 Important notes:
 

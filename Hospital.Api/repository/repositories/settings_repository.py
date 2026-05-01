@@ -32,3 +32,7 @@ def active_departments():
 def default_department_code():
     departments = active_departments()
     return departments[0].code
+
+
+def appointment_duration_minutes():
+    return get_hospital_profile().appointment_duration_minutes

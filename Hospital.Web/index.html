@@ -202,18 +202,21 @@
             <form id="appointment-form" class="form-grid">
               <label>
                 Patient name
-                <input name="full_name" required>
+                <div class="autocomplete-field">
+                  <input id="appointment-patient-name" name="full_name" autocomplete="off" required>
+                  <div class="autocomplete-menu hidden" id="appointment-patient-suggestions"></div>
+                </div>
               </label>
               <label>
                 Mobile
-                <input name="phone_number" inputmode="tel">
+                <input id="appointment-phone-number" name="phone_number" inputmode="tel">
               </label>
               <label>
                 Department
                 <select name="department" data-department-select></select>
               </label>
               <label>
-                Date and time
+                Appointment start
                 <input name="scheduled_for" type="datetime-local" required>
               </label>
               <label class="wide">

@@ -3,7 +3,7 @@ import json
 from django.contrib.auth.models import Group, User
 from django.test import Client, TestCase
 
-from repository.models import StaffProfile
+from repository.models import Patient, StaffProfile
 
 
 class AuthRoleTests(TestCase):
@@ -73,6 +73,25 @@ class AuthRoleTests(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response["Location"], "/login/")
         self.assertNotIn("_auth_user_id", self.client.session)
+
+    def test_admin_index_shows_existing_records_under_categories(self):
+        user = User.objects.create_superuser("siteadmin", password="test-pass")
+        Patient.objects.create(full_name="Admin Preview Patient", department="GENERAL")
+        self.client.login(username="siteadmin", password="test-pass")
+
+        response = self.client.get("/admin/")
+
+        self.assertContains(response, "Patients")
+        self.assertContains(response, "Admin Preview Patient")
+
+    def test_backup_records_page_has_create_backup_action(self):
+        User.objects.create_superuser("siteadmin", password="test-pass")
+        self.client.login(username="siteadmin", password="test-pass")
+
+        response = self.client.get("/admin/repository/backuprecord/")
+
+        self.assertContains(response, "Create backup now")
+        self.assertContains(response, "/admin/repository/backuprecord/create-backup/")
 
     def test_user_with_temporary_password_is_redirected_to_change_password(self):
         user = self.create_user("tempdoctor", "Doctor")

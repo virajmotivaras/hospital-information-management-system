@@ -8,6 +8,10 @@ class HospitalProfile(models.Model):
     logo = models.FileField(upload_to="hospital-logo/", blank=True)
     address = models.TextField(blank=True)
     phone_number = models.CharField(max_length=40, blank=True)
+    appointment_duration_minutes = models.PositiveSmallIntegerField(
+        default=30,
+        help_text="Default appointment slot length used to prevent overlapping bookings.",
+    )
     backup_folder_path = models.CharField(
         max_length=500,
         blank=True,
@@ -29,6 +33,8 @@ class HospitalProfile(models.Model):
                 raise ValidationError({"backup_folder_path": "This folder does not exist on the server."})
             if not path.is_dir():
                 raise ValidationError({"backup_folder_path": "This path must be a folder."})
+        if self.appointment_duration_minutes < 5:
+            raise ValidationError({"appointment_duration_minutes": "Appointment duration must be at least 5 minutes."})
 
     def __str__(self):
         return self.hospital_name

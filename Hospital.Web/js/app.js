@@ -6,6 +6,9 @@ const state = {
   session: null,
   calendarWeekStart: null,
   calendarAppointments: [],
+  appointmentPatientSuggestions: [],
+  patientCache: [],
+  appointmentPatientSearchToken: 0,
 };
 
 const titles = {
@@ -411,6 +414,7 @@ async function loadQueue() {
 async function loadPatients(search = "") {
   if (!state.session?.permissions?.patients) return;
   const data = await http.request(`/api/patients/?search=${encodeURIComponent(search)}`);
+  if (!search.trim()) state.patientCache = data.patients;
   document.getElementById("patient-list").innerHTML = data.patients.length
     ? data.patients.map((patient) => `
       <article class="record-row clickable" data-action="view-patient" data-patient-id="${escapeHtml(patient.id)}">
@@ -423,6 +427,67 @@ async function loadPatients(search = "") {
       </article>
     `).join("")
     : `<div class="record-row">No patients found.</div>`;
+}
+
+function renderAppointmentPatientSuggestions(patients) {
+  const menu = document.getElementById("appointment-patient-suggestions");
+  state.appointmentPatientSuggestions = patients;
+  if (!patients.length) {
+    menu.classList.add("hidden");
+    menu.innerHTML = "";
+    return;
+  }
+
+  menu.innerHTML = patients.map((patient) => `
+    <button class="autocomplete-option" data-action="select-appointment-patient" data-patient-id="${escapeHtml(patient.id)}" type="button">
+      <strong>${escapeHtml(patient.full_name)}</strong>
+      <span class="meta">${patient.phone_number ? escapeHtml(patient.phone_number) : "No mobile"} | ${escapeHtml(departmentName(patient.department))}</span>
+    </button>
+  `).join("");
+  menu.classList.remove("hidden");
+}
+
+function renderLocalAppointmentPatientSuggestions(search) {
+  const term = search.trim();
+  const normalizedTerm = term.toLowerCase();
+  if (!term) {
+    renderAppointmentPatientSuggestions([]);
+    return;
+  }
+
+  const localMatches = state.patientCache
+    .filter((patient) => patient.full_name.toLowerCase().startsWith(normalizedTerm))
+    .slice(0, 8);
+  renderAppointmentPatientSuggestions(localMatches);
+}
+
+async function searchAppointmentPatients(search) {
+  if (!state.session?.permissions?.patients) return;
+  const term = search.trim();
+  const normalizedTerm = term.toLowerCase();
+  if (!term) {
+    renderAppointmentPatientSuggestions([]);
+    return;
+  }
+
+  const token = ++state.appointmentPatientSearchToken;
+  const data = await http.request(`/api/patients/?search=${encodeURIComponent(term)}`);
+  if (token !== state.appointmentPatientSearchToken) return;
+  renderAppointmentPatientSuggestions(
+    data.patients
+      .filter((patient) => patient.full_name.toLowerCase().startsWith(normalizedTerm))
+      .slice(0, 8)
+  );
+}
+
+function selectAppointmentPatient(patientId) {
+  const patient = state.appointmentPatientSuggestions.find((item) => String(item.id) === String(patientId));
+  if (!patient) return;
+  const form = document.getElementById("appointment-form");
+  form.full_name.value = patient.full_name;
+  form.phone_number.value = patient.phone_number || "";
+  form.department.value = patient.department;
+  renderAppointmentPatientSuggestions([]);
 }
 
 async function loadAppointments() {
@@ -551,6 +616,8 @@ function switchView(viewName) {
 }
 
 function bindEvents() {
+  let appointmentPatientSearchTimer = null;
+
   document.querySelectorAll(".nav-item[data-view]").forEach((button) => {
     button.addEventListener("click", () => switchView(button.dataset.view));
   });
@@ -565,6 +632,15 @@ function bindEvents() {
     }
     if (event.target.dataset.action === "print-prescription") {
       window.open(event.target.dataset.printUrl, "_blank", "noopener");
+    }
+    if (event.target.dataset.action === "select-appointment-patient") {
+      selectAppointmentPatient(event.target.dataset.patientId);
+    }
+  });
+
+  document.addEventListener("click", (event) => {
+    if (!event.target.closest(".autocomplete-field")) {
+      renderAppointmentPatientSuggestions([]);
     }
   });
 
@@ -597,6 +673,14 @@ function bindEvents() {
 
   document.getElementById("patient-search").addEventListener("input", (event) => {
     loadPatients(event.target.value).catch((error) => setStatus(error.message, true));
+  });
+
+  document.getElementById("appointment-patient-name").addEventListener("input", (event) => {
+    window.clearTimeout(appointmentPatientSearchTimer);
+    renderLocalAppointmentPatientSuggestions(event.target.value);
+    appointmentPatientSearchTimer = window.setTimeout(() => {
+      searchAppointmentPatients(event.target.value).catch((error) => setStatus(error.message, true));
+    }, 60);
   });
 
   document.getElementById("checkin-form").addEventListener("submit", async (event) => {

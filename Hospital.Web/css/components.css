@@ -232,6 +232,48 @@ textarea:focus {
   gap: 10px;
 }
 
+.autocomplete-field {
+  position: relative;
+}
+
+.autocomplete-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 5;
+  max-height: 220px;
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #fff;
+  box-shadow: 0 10px 24px rgba(26, 42, 52, 0.16);
+}
+
+.autocomplete-option {
+  width: 100%;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  padding: 9px 10px;
+  text-align: left;
+  background: #fff;
+  color: var(--ink);
+}
+
+.autocomplete-option:last-child {
+  border-bottom: 0;
+}
+
+.autocomplete-option:hover,
+.autocomplete-option:focus {
+  background: var(--soft);
+}
+
+.autocomplete-option strong {
+  display: block;
+  margin-bottom: 3px;
+}
+
 .medicine-row input:last-child {
   grid-column: 1 / -1;
 }

@@ -1,0 +1,76 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block extrastyle %}
+{{ block.super }}
+<style>
+  .admin-record-preview-row td {
+    padding: 0 0 10px 30px;
+    background: var(--body-bg);
+  }
+
+  .admin-record-preview-list {
+    margin: 0;
+    padding: 4px 0 0 14px;
+  }
+
+  .admin-record-preview-list li {
+    margin: 3px 0;
+    color: var(--body-quiet-color);
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div id="content-main">
+  {% if app_list %}
+    {% for app in app_list %}
+      <div class="app-{{ app.app_label }} module">
+        <table>
+          <caption>
+            <a href="{{ app.app_url }}" class="section" title="{% blocktranslate with name=app.name %}Models in the {{ name }} application{% endblocktranslate %}">
+              {{ app.name }}
+            </a>
+          </caption>
+          {% for model in app.models %}
+            <tr class="model-{{ model.object_name|lower }}">
+              <th scope="row">
+                {% if model.admin_url %}
+                  <a href="{{ model.admin_url }}">{{ model.name }}</a>
+                {% else %}
+                  {{ model.name }}
+                {% endif %}
+              </th>
+              <td>
+                {% if model.add_url %}
+                  <a href="{{ model.add_url }}" class="addlink">{% translate "Add" %}</a>
+                {% endif %}
+              </td>
+              <td>
+                {% if model.admin_url and model.view_only %}
+                  <a href="{{ model.admin_url }}" class="viewlink">{% translate "View" %}</a>
+                {% elif model.admin_url %}
+                  <a href="{{ model.admin_url }}" class="changelink">{% translate "Change" %}</a>
+                {% endif %}
+              </td>
+            </tr>
+            {% if model.record_previews %}
+              <tr class="admin-record-preview-row">
+                <td colspan="3">
+                  <ul class="admin-record-preview-list">
+                    {% for record in model.record_previews %}
+                      <li><a href="{{ record.url }}">{{ record.label }}</a></li>
+                    {% endfor %}
+                  </ul>
+                </td>
+              </tr>
+            {% endif %}
+          {% endfor %}
+        </table>
+      </div>
+    {% endfor %}
+  {% else %}
+    <p>{% translate "You do not have permission to view or edit anything." %}</p>
+  {% endif %}
+</div>
+{% endblock %}
