@@ -11,7 +11,7 @@ class Appointment(models.Model):
         CANCELLED = "CANCELLED", "Cancelled"
 
     patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name="appointments")
-    department = models.CharField(max_length=20, choices=Patient.Department.choices)
+    department = models.CharField(max_length=40)
     scheduled_for = models.DateTimeField()
     reason = models.CharField(max_length=240, blank=True)
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.SCHEDULED)

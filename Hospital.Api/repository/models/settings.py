@@ -4,7 +4,7 @@ from django.db import models
 
 class HospitalProfile(models.Model):
     hospital_name = models.CharField(max_length=180, default="Hospital Desk")
-    tagline = models.CharField(max_length=180, default="Gynecology and Pediatrics")
+    tagline = models.CharField(max_length=180, default="Hospital")
     logo = models.FileField(upload_to="hospital-logo/", blank=True)
     address = models.TextField(blank=True)
     phone_number = models.CharField(max_length=40, blank=True)

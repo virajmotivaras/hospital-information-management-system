@@ -35,6 +35,20 @@ Create normal staff users:
 - Doctor users: assign group `Doctor`.
 - Admin users: assign group `Admin` and enable `staff status`.
 
+For first-run prototype accounts:
+
+```bat
+python manage.py create_demo_users
+```
+
+The created users receive temporary passwords and are forced to change them at first login. Admin can reset this requirement later in `/admin/` under `Staff profiles`.
+
+## Departments
+
+Open `/admin/` and maintain `Departments`.
+
+The active department list is shown in reception check-in and appointment forms. The default first-run department is `General`.
+
 ## Backups
 
 The admin panel includes `Hospital profile`.

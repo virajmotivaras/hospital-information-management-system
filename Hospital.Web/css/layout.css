@@ -47,8 +47,13 @@ body {
   gap: 8px;
 }
 
+.nav-form {
+  margin: 0;
+}
+
 .nav-item {
   display: block;
+  width: 100%;
   border: 0;
   border-radius: 6px;
   padding: 12px 14px;

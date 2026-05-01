@@ -3,13 +3,14 @@ import json
 from django.test import Client, TestCase
 from django.contrib.auth.models import Group, User
 
-from repository.models import Appointment, Patient
+from repository.models import Appointment, Department, Patient
 
 
 class AppointmentApiTests(TestCase):
     def setUp(self):
         self.client = Client()
         Group.objects.get_or_create(name="Reception")
+        Department.objects.get_or_create(code="GENERAL", defaults={"name": "General"})
         user = User.objects.create_user("reception", password="test-pass")
         user.groups.add(Group.objects.get(name="Reception"))
         self.client.login(username="reception", password="test-pass")
@@ -21,7 +22,7 @@ class AppointmentApiTests(TestCase):
                 {
                     "full_name": "Neha Patel",
                     "phone_number": "9000011111",
-                    "department": "PEDIATRICS",
+                    "department": "GENERAL",
                     "guardian_name": "Amit Patel",
                     "scheduled_for": "2026-05-02T10:30:00+02:00",
                     "reason": "Vaccination",

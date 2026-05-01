@@ -2,7 +2,7 @@ from django.contrib.auth.models import Group
 from django.core.management.base import BaseCommand
 
 from domain.common.roles import ALL_ROLES
-from repository.repositories.settings_repository import get_hospital_profile
+from repository.repositories.settings_repository import ensure_default_department, get_hospital_profile
 
 
 class Command(BaseCommand):
@@ -15,3 +15,5 @@ class Command(BaseCommand):
 
         profile = get_hospital_profile()
         self.stdout.write(self.style.SUCCESS(f"Hospital profile ready: {profile.hospital_name}"))
+        department = ensure_default_department()
+        self.stdout.write(self.style.SUCCESS(f"Department ready: {department.name}"))

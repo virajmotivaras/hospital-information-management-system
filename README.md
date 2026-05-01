@@ -1,6 +1,6 @@
 # Hospital Information Management System
 
-Local-first hospital management prototype for a gynecology and pediatrics focused hospital.
+Local-first hospital management prototype for a hospital.
 
 ## Current Features
 
@@ -12,6 +12,7 @@ Local-first hospital management prototype for a gynecology and pediatrics focuse
 - Prescription creation with printable prescription page.
 - Staff login with Reception, Doctor, and Admin roles.
 - Admin-managed hospital name, logo, address, and backup folder.
+- Admin-managed departments used by reception and appointments.
 - Plain HTML/CSS/JavaScript frontend served by Django.
 
 ## Project Structure
@@ -45,6 +46,14 @@ cd Hospital.Api
 ```
 
 Then log in at `/admin/`, create staff users, and assign them to `Reception`, `Doctor`, or `Admin`.
+
+For prototype review accounts, you can run:
+
+```bat
+python manage.py create_demo_users
+```
+
+This creates temporary Reception, Doctor, and Admin accounts and forces password change on first login.
 
 Open the app on the server computer:
 

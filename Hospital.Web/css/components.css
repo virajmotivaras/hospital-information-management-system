@@ -169,6 +169,52 @@ textarea:focus {
   gap: 8px;
 }
 
+.record-row.clickable {
+  cursor: pointer;
+}
+
+.record-row.clickable:hover {
+  border-color: var(--primary);
+  background: #f3fbfa;
+}
+
+.patient-detail {
+  margin-top: 18px;
+}
+
+.history-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.history-grid h3,
+.billing-form h3 {
+  margin: 0 0 8px;
+  font-size: 15px;
+}
+
+.mini-card {
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 10px;
+  background: #fbfdfd;
+}
+
+.amount-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 8px;
+  font-weight: 700;
+}
+
+.billing-form {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+
 .search {
   max-width: 340px;
 }
@@ -180,6 +226,12 @@ textarea:focus {
   margin-bottom: 10px;
 }
 
+.autocomplete-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+}
+
 .medicine-row input:last-child {
   grid-column: 1 / -1;
 }
@@ -187,7 +239,9 @@ textarea:focus {
 @media (max-width: 720px) {
   .form-grid,
   .vitals,
-  .medicine-row {
+  .medicine-row,
+  .autocomplete-row,
+  .history-grid {
     grid-template-columns: 1fr;
   }
 

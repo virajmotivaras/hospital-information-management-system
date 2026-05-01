@@ -18,3 +18,20 @@ def upcoming_appointments(limit=40):
         .filter(status=Appointment.Status.SCHEDULED, scheduled_for__gte=timezone.now())
         .order_by("scheduled_for")[:limit]
     )
+
+
+def upcoming_for_patient(patient_id):
+    return list(
+        Appointment.objects.select_related("patient")
+        .filter(patient_id=patient_id, scheduled_for__gte=timezone.now())
+        .exclude(status=Appointment.Status.CANCELLED)
+        .order_by("scheduled_for")
+    )
+
+
+def past_for_patient(patient_id):
+    return list(
+        Appointment.objects.select_related("patient")
+        .filter(patient_id=patient_id, scheduled_for__lt=timezone.now())
+        .order_by("-scheduled_for")
+    )

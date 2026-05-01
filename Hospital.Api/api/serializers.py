@@ -1,3 +1,10 @@
+from decimal import Decimal
+
+
+def money_to_string(value):
+    return str(Decimal(value).quantize(Decimal("0.01")))
+
+
 def patient_to_dict(patient):
     return {
         "id": patient.id,
@@ -36,6 +43,36 @@ def appointment_to_dict(appointment):
         "scheduled_for": appointment.scheduled_for.isoformat(),
         "reason": appointment.reason,
         "status": appointment.status,
+    }
+
+
+def bill_to_dict(bill):
+    return {
+        "id": bill.id,
+        "patient_id": bill.patient_id,
+        "visit_id": bill.visit_id,
+        "status": bill.status,
+        "paid_amount": money_to_string(bill.paid_amount),
+        "total_amount": money_to_string(bill.total_amount),
+        "due_amount": money_to_string(bill.due_amount),
+        "notes": bill.notes,
+        "created_at": bill.created_at.isoformat(),
+        "items": [
+            {
+                "description": item.description,
+                "quantity": str(item.quantity),
+                "unit_price": money_to_string(item.unit_price),
+                "line_total": money_to_string(item.line_total),
+            }
+            for item in bill.items.all()
+        ],
+    }
+
+
+def department_to_dict(department):
+    return {
+        "code": department.code,
+        "name": department.name,
     }
 
 

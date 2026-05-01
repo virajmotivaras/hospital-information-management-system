@@ -15,7 +15,7 @@
         <img class="brand-logo" id="brand-logo" alt="" hidden>
         <div>
           <strong id="brand-name">Hospital Desk</strong>
-          <small id="brand-tagline">Gynecology and Pediatrics</small>
+          <small id="brand-tagline">Hospital</small>
         </div>
       </div>
       <nav class="nav">
@@ -24,7 +24,10 @@
         <button class="nav-item" data-view="appointments">Appointments</button>
         <button class="nav-item" data-view="prescription">Prescription</button>
         <a class="nav-item admin-link" href="/admin/">Admin</a>
-        <a class="nav-item" href="/logout/">Logout</a>
+        <form class="nav-form" action="/logout/" method="post">
+          {% csrf_token %}
+          <button class="nav-item" type="submit">Logout</button>
+        </form>
       </nav>
     </aside>
 
@@ -58,10 +61,7 @@
               </label>
               <label>
                 Department
-                <select name="department">
-                  <option value="GYNECOLOGY">Gynecology</option>
-                  <option value="PEDIATRICS">Pediatrics</option>
-                </select>
+                <select name="department" data-department-select></select>
               </label>
               <label>
                 Age
@@ -78,7 +78,7 @@
               </label>
               <label>
                 Parent/guardian
-                <input name="guardian_name" placeholder="Useful for pediatric patients">
+                <input name="guardian_name" placeholder="Parent, spouse, or guardian">
               </label>
               <label class="wide">
                 Reason for visit
@@ -120,6 +120,58 @@
           </div>
           <div id="patient-list" class="table-list"></div>
         </section>
+        <section class="panel patient-detail hidden" id="patient-detail">
+          <div class="panel-heading">
+            <div>
+              <h2 id="detail-patient-name">Patient History</h2>
+              <span id="detail-patient-meta">Select a patient</span>
+            </div>
+            <button class="ghost" id="close-patient-detail" type="button">Close</button>
+          </div>
+          <div class="history-grid">
+            <section>
+              <h3>Upcoming Appointments</h3>
+              <div id="detail-upcoming-appointments" class="stack"></div>
+            </section>
+            <section>
+              <h3>Past Appointments</h3>
+              <div id="detail-past-appointments" class="stack"></div>
+            </section>
+            <section>
+              <h3>Prescriptions</h3>
+              <div id="detail-prescriptions" class="stack"></div>
+            </section>
+            <section>
+              <h3>Bills</h3>
+              <div id="detail-bills" class="stack"></div>
+            </section>
+          </div>
+          <form id="bill-form" class="form-grid billing-form hidden">
+            <h3 class="wide">Add Bill</h3>
+            <input type="hidden" name="patient_id">
+            <label class="wide">
+              Item
+              <input name="description" placeholder="Consultation, scan, medicine...">
+            </label>
+            <label>
+              Quantity
+              <input name="quantity" inputmode="decimal" value="1">
+            </label>
+            <label>
+              Amount
+              <input name="unit_price" inputmode="decimal" placeholder="0.00">
+            </label>
+            <label>
+              Paid now
+              <input name="paid_amount" inputmode="decimal" placeholder="0.00">
+            </label>
+            <label class="wide">
+              Notes
+              <input name="notes" placeholder="Optional">
+            </label>
+            <button class="primary wide" type="submit">Save Bill</button>
+          </form>
+        </section>
       </section>
 
       <section class="view" id="view-appointments">
@@ -140,10 +192,7 @@
               </label>
               <label>
                 Department
-                <select name="department">
-                  <option value="GYNECOLOGY">Gynecology</option>
-                  <option value="PEDIATRICS">Pediatrics</option>
-                </select>
+                <select name="department" data-department-select></select>
               </label>
               <label>
                 Date and time
@@ -186,6 +235,11 @@
               </label>
               <label class="wide">
                 Diagnosis
+                <div class="autocomplete-row">
+                  <input id="diagnosis-symptom-input" list="symptom-options" placeholder="Search or type symptom, then add">
+                  <button class="ghost" id="add-diagnosis-symptom" type="button">Add</button>
+                </div>
+                <datalist id="symptom-options"></datalist>
                 <textarea name="diagnosis" rows="3"></textarea>
               </label>
               <label class="wide">

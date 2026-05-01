@@ -1,21 +1,21 @@
 from domain.common.errors import ValidationError
 from repository.models import Patient
+from repository.repositories.settings_repository import active_departments, default_department_code
 
 
-VALID_DEPARTMENTS = {choice[0] for choice in Patient.Department.choices}
 VALID_GENDERS = {choice[0] for choice in Patient.Gender.choices}
 
 
 def clean_patient_payload(data, require_name=True):
     cleaned = dict(data)
     cleaned["full_name"] = (data.get("full_name") or "").strip()
-    cleaned["department"] = data.get("department") or Patient.Department.GYNECOLOGY
+    cleaned["department"] = data.get("department") or default_department_code()
     cleaned["gender"] = data.get("gender") or Patient.Gender.NOT_SPECIFIED
 
     if require_name and not cleaned["full_name"]:
         raise ValidationError("Patient name is required.", "full_name")
-    if cleaned["department"] not in VALID_DEPARTMENTS:
-        raise ValidationError("Choose gynecology or pediatrics.", "department")
+    if cleaned["department"] not in {department.code for department in active_departments()}:
+        raise ValidationError("Choose a configured department.", "department")
     if cleaned["gender"] not in VALID_GENDERS:
         raise ValidationError("Choose a valid gender.", "gender")
 

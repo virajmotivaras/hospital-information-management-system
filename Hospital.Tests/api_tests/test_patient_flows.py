@@ -1,9 +1,11 @@
 import json
+from datetime import timedelta
 
 from django.test import Client, TestCase
 from django.contrib.auth.models import Group, User
+from django.utils import timezone
 
-from repository.models import Patient, Prescription, Visit
+from repository.models import Appointment, Bill, Department, Patient, Prescription, Visit
 
 
 class PatientFlowApiTests(TestCase):
@@ -11,6 +13,8 @@ class PatientFlowApiTests(TestCase):
         self.client = Client()
         Group.objects.get_or_create(name="Reception")
         Group.objects.get_or_create(name="Doctor")
+        Group.objects.get_or_create(name="Admin")
+        Department.objects.get_or_create(code="GENERAL", defaults={"name": "General"})
         self.reception = User.objects.create_user("reception", password="test-pass")
         self.reception.groups.add(Group.objects.get(name="Reception"))
         self.doctor = User.objects.create_user("doctor", password="test-pass")
@@ -29,7 +33,7 @@ class PatientFlowApiTests(TestCase):
             "/api/visits/",
             {
                 "full_name": "Anita Rao",
-                "department": "GYNECOLOGY",
+                "department": "GENERAL",
             },
         )
 
@@ -42,7 +46,7 @@ class PatientFlowApiTests(TestCase):
         first = {
             "full_name": "Meera Shah",
             "phone_number": "98765 43210",
-            "department": "PEDIATRICS",
+            "department": "GENERAL",
             "guardian_name": "Raj Shah",
         }
         self.post_json("/api/visits/", first)
@@ -52,7 +56,7 @@ class PatientFlowApiTests(TestCase):
             {
                 "full_name": "Meera Shah",
                 "phone_number": "9876543210",
-                "department": "PEDIATRICS",
+                "department": "GENERAL",
                 "reason": "Follow-up",
             },
         )
@@ -67,7 +71,7 @@ class PatientFlowApiTests(TestCase):
             "/api/visits/",
             {
                 "full_name": "Kavya Menon",
-                "department": "GYNECOLOGY",
+                "department": "GENERAL",
             },
         ).json()
 
@@ -98,3 +102,55 @@ class PatientFlowApiTests(TestCase):
         print_response = self.client.get(response.json()["print_url"])
         self.assertContains(print_response, "Folic Acid")
         self.assertContains(print_response, "Kavya Menon")
+
+    def test_doctor_can_view_patient_appointment_and_prescription_history(self):
+        patient = Patient.objects.create(full_name="Sara Khan", department="GENERAL")
+        Appointment.objects.create(
+            patient=patient,
+            department="GENERAL",
+            scheduled_for=timezone.now() - timedelta(days=10),
+            reason="Previous visit",
+        )
+        Appointment.objects.create(
+            patient=patient,
+            department="GENERAL",
+            scheduled_for=timezone.now() + timedelta(days=5),
+            reason="Next visit",
+        )
+        prescription = Prescription.objects.create(patient=patient, doctor_name="Doctor", diagnosis="Follow-up")
+
+        self.client.logout()
+        self.client.login(username="doctor", password="test-pass")
+        response = self.client.get(f"/api/patients/{patient.id}/history/")
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(len(payload["appointments"]["past"]), 1)
+        self.assertEqual(len(payload["appointments"]["upcoming"]), 1)
+        self.assertEqual(payload["prescriptions"][0]["id"], prescription.id)
+        self.assertEqual(payload["bills"], [])
+
+    def test_reception_can_create_and_view_patient_bill_history(self):
+        patient = Patient.objects.create(full_name="Billing Patient", department="GENERAL")
+
+        response = self.post_json(
+            f"/api/patients/{patient.id}/bills/",
+            {
+                "paid_amount": "200.00",
+                "items": [
+                    {
+                        "description": "Consultation",
+                        "quantity": "1",
+                        "unit_price": "500.00",
+                    }
+                ],
+            },
+        )
+
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(Bill.objects.count(), 1)
+        self.assertEqual(response.json()["bill"]["status"], "PARTIALLY_PAID")
+
+        history = self.client.get(f"/api/patients/{patient.id}/history/")
+        self.assertEqual(history.status_code, 200)
+        self.assertEqual(history.json()["bills"][0]["due_amount"], "300.00")

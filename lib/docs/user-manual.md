@@ -4,13 +4,15 @@ This manual is for hospital staff reviewing the first prototype.
 
 ## Purpose
 
-The system is designed for a gynecology and pediatrics focused hospital. The first version focuses on reducing time at the front desk and making the doctor's consultation flow easier.
+The system is designed for a hospital. The first version focuses on reducing time at the front desk and making the doctor's consultation flow easier.
 
 ## Main Screens
 
 ### Login
 
 Every staff member should log in with their own username and password.
+
+First-time users may be given a temporary password. If so, the system will ask them to create a new password before they can continue.
 
 The first roles are:
 
@@ -19,6 +21,8 @@ The first roles are:
 - `Admin`: manage users, hospital profile, master data, and backups.
 
 Admin users also need Django `staff status` enabled so they can enter the admin panel.
+
+If a staff member forgets their password, Admin can reset the user's password in `/admin/` and then open `Staff profiles` to enable `must change password`.
 
 ### Patient Desk
 
@@ -34,7 +38,7 @@ Optional but useful:
 - mobile number
 - age
 - gender
-- parent or guardian name for pediatric patients
+- parent, spouse, or guardian name when useful
 - reason for visit
 - temperature, weight, and blood pressure
 
@@ -64,6 +68,15 @@ Use this screen to search registered patients by:
 
 This helps staff confirm whether the patient is new or returning.
 
+Click a patient row to open patient history.
+
+Depending on role, the history panel can show:
+
+- upcoming appointments
+- past appointments
+- past and current prescriptions
+- past and current bills
+
 ### Appointments
 
 Use this screen to schedule future visits.
@@ -86,7 +99,7 @@ After saving, the system opens a printable prescription page.
 
 1. Open `Patient Desk`.
 2. Enter the patient's name.
-3. Select `Gynecology` or `Pediatrics`.
+3. Select the configured department, for example `General`.
 4. Add mobile, age, guardian, or vitals if quickly available.
 5. Click `Check In Patient`.
 6. Patient appears in the waiting queue as `NEW`.
@@ -99,7 +112,7 @@ After saving, the system opens a printable prescription page.
 4. If the mobile number exists, the system reuses the patient record.
 5. Patient appears in the waiting queue as `REPEAT`.
 
-If mobile is not available, entering the same patient name and guardian name can also help identify repeat pediatric patients.
+If mobile is not available, entering the same patient name and guardian name can also help identify repeat patients.
 
 ## Prescription Printing
 
@@ -109,6 +122,51 @@ If mobile is not available, entering the same patient name and guardian name can
 4. Click `Save and Print Prescription`.
 5. A print-friendly prescription opens in a new tab.
 6. Click `Print`.
+
+## Viewing Patient History
+
+Doctor workflow:
+
+1. Open `Patients`.
+2. Search for the patient.
+3. Click the patient row.
+4. Review upcoming and past appointments.
+5. Review past prescriptions and reprint when needed.
+
+Reception workflow:
+
+1. Open `Patients`.
+2. Search for the patient.
+3. Click the patient row.
+4. Review appointment history and billing history.
+5. Add a bill if needed.
+
+## Billing
+
+Reception and Admin can create and view bills.
+
+Current bill fields:
+
+- item description
+- quantity
+- amount
+- paid amount
+- notes
+
+The system calculates:
+
+- total amount
+- paid amount
+- due amount
+- bill status
+
+Initial statuses are:
+
+- `DRAFT`
+- `UNPAID`
+- `PARTIALLY_PAID`
+- `PAID`
+- `CANCELLED`
 
 ## Hospital Name, Logo, and Prescription Header
 
@@ -126,6 +184,18 @@ Admin workflow:
 5. Save.
 
 The hospital name and logo appear in the application sidebar and on printed prescriptions.
+
+## Departments
+
+Admin workflow:
+
+1. Log in as an Admin user.
+2. Open `/admin/`.
+3. Open `Departments`.
+4. Add or edit department names.
+5. Keep only departments currently used by staff marked as active.
+
+Reception and appointment forms use the active department list from Admin.
 
 There should normally be only one hospital profile record.
 
@@ -156,11 +226,12 @@ Important notes:
 ## Review Questions For Hospital Users
 
 - Is the quick check-in form short enough?
-- Are any fields missing for gynecology?
-- Are any fields missing for pediatrics?
+- Are any hospital-specific fields missing?
+- Are the configured departments correct?
 - Should the prescription include hospital address, registration number, or logo?
 - Is the waiting queue clear enough for reception and doctors?
 - Are Reception, Doctor, and Admin permissions correct?
 - Is the backup workflow understandable for the Admin user?
+- Should billing be handled by Reception only, or should Doctor/Admin see more billing details?
 - Which existing system features should be added next?
 - Which existing system features should be deliberately left out?

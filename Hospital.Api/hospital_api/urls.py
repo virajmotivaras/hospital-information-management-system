@@ -5,12 +5,13 @@ from django.contrib.auth.views import LogoutView
 from django.contrib.auth.decorators import login_required
 from django.urls import include, path
 from django.views.generic import TemplateView
-from api.auth_views import app_login
+from api.auth_views import app_login, force_password_change
 
 
 urlpatterns = [
     path("", login_required(TemplateView.as_view(template_name="index.html")), name="home"),
     path("login/", app_login, name="login"),
+    path("change-password/", force_password_change, name="change_password"),
     path("logout/", LogoutView.as_view(), name="logout"),
     path("admin/", admin.site.urls),
     path("api/", include("api.urls")),

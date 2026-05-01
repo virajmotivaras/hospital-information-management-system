@@ -29,3 +29,12 @@ def get_prescription(prescription_id):
         .prefetch_related("items")
         .get(id=prescription_id)
     )
+
+
+def list_prescriptions_for_patient(patient_id):
+    return list(
+        Prescription.objects.select_related("patient", "visit")
+        .prefetch_related("items")
+        .filter(patient_id=patient_id)
+        .order_by("-created_at")
+    )

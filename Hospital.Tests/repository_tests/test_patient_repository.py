@@ -9,7 +9,7 @@ class PatientRepositoryTests(TestCase):
             {
                 "full_name": "Asha Kumar",
                 "phone_number": "98 76-54",
-                "department": "GYNECOLOGY",
+                "department": "GENERAL",
             }
         )
 

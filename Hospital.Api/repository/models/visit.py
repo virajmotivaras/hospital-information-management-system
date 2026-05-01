@@ -16,7 +16,7 @@ class Visit(models.Model):
 
     patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name="visits")
     visit_type = models.CharField(max_length=20, choices=VisitType.choices)
-    department = models.CharField(max_length=20, choices=Patient.Department.choices)
+    department = models.CharField(max_length=40)
     reason = models.CharField(max_length=240, blank=True)
     status = models.CharField(max_length=24, choices=Status.choices, default=Status.WAITING)
     temperature_c = models.DecimalField(max_digits=4, decimal_places=1, null=True, blank=True)

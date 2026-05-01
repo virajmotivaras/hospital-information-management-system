@@ -8,10 +8,6 @@ class Patient(models.Model):
         OTHER = "OTHER", "Other"
         NOT_SPECIFIED = "NOT_SPECIFIED", "Not specified"
 
-    class Department(models.TextChoices):
-        GYNECOLOGY = "GYNECOLOGY", "Gynecology"
-        PEDIATRICS = "PEDIATRICS", "Pediatrics"
-
     full_name = models.CharField(max_length=160)
     phone_number = models.CharField(max_length=32, blank=True)
     age_years = models.PositiveSmallIntegerField(null=True, blank=True)
@@ -21,7 +17,7 @@ class Patient(models.Model):
         default=Gender.NOT_SPECIFIED,
     )
     guardian_name = models.CharField(max_length=160, blank=True)
-    department = models.CharField(max_length=20, choices=Department.choices)
+    department = models.CharField(max_length=40)
     address = models.TextField(blank=True)
     allergies = models.TextField(blank=True)
     notes = models.TextField(blank=True)
