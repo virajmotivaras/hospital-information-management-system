@@ -20,8 +20,10 @@ class Visit(models.Model):
     reason = models.CharField(max_length=240, blank=True)
     status = models.CharField(max_length=24, choices=Status.choices, default=Status.WAITING)
     temperature_c = models.DecimalField(max_digits=4, decimal_places=1, null=True, blank=True)
+    height_cm = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
     weight_kg = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
     blood_pressure = models.CharField(max_length=32, blank=True)
+    pulse_bpm = models.PositiveSmallIntegerField(null=True, blank=True)
     check_in_time = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

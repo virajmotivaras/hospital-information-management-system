@@ -103,17 +103,25 @@
                 <input name="reason" placeholder="Fever, antenatal checkup, follow-up...">
               </label>
               <div class="vitals wide">
-                <label>
+                <label data-vital-field="temperature_c">
                   Temp C
                   <input name="temperature_c" inputmode="decimal" placeholder="Optional">
                 </label>
-                <label>
+                <label data-vital-field="height_cm">
+                  Height cm
+                  <input name="height_cm" inputmode="decimal" placeholder="Optional">
+                </label>
+                <label data-vital-field="weight_kg">
                   Weight kg
                   <input name="weight_kg" inputmode="decimal" placeholder="Optional">
                 </label>
-                <label>
+                <label data-vital-field="blood_pressure">
                   BP
                   <input name="blood_pressure" placeholder="Optional">
+                </label>
+                <label data-vital-field="pulse_bpm">
+                  Pulse
+                  <input name="pulse_bpm" type="number" min="0" max="300" placeholder="Optional">
                 </label>
               </div>
               <button class="primary wide" type="submit">Check In Patient</button>
@@ -283,6 +291,33 @@
                 <button class="ghost" id="print-prescription" type="button" disabled>Print Prescription</button>
               </div>
             </form>
+            <section class="doctor-vitals hidden" id="doctor-vitals-panel">
+              <h3>Vitals and Growth</h3>
+              <form id="visit-vitals-form" class="form-grid">
+                <label data-doctor-vital-field="temperature_c">
+                  Temp C
+                  <input name="temperature_c" inputmode="decimal">
+                </label>
+                <label data-doctor-vital-field="height_cm">
+                  Height cm
+                  <input name="height_cm" inputmode="decimal">
+                </label>
+                <label data-doctor-vital-field="weight_kg">
+                  Weight kg
+                  <input name="weight_kg" inputmode="decimal">
+                </label>
+                <label data-doctor-vital-field="blood_pressure">
+                  BP
+                  <input name="blood_pressure">
+                </label>
+                <label data-doctor-vital-field="pulse_bpm">
+                  Pulse
+                  <input name="pulse_bpm" type="number" min="0" max="300">
+                </label>
+                <button class="ghost" type="submit">Save Vitals</button>
+              </form>
+              <div id="growth-chart" class="growth-chart"></div>
+            </section>
           </section>
           <section class="panel">
             <div class="panel-heading">

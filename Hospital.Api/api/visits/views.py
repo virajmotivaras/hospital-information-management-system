@@ -49,3 +49,14 @@ def visit_status(request, visit_id):
 
     visit = visit_repository.set_visit_status(visit_id, status)
     return JsonResponse({"visit": visit_to_dict(visit)})
+
+
+@csrf_exempt
+@require_roles(ADMIN, DOCTOR)
+@handle_api_errors
+def visit_vitals(request, visit_id):
+    if request.method != "PATCH":
+        return JsonResponse({"error": "Method not allowed."}, status=405)
+
+    visit = visit_repository.update_visit_vitals(visit_id, parse_json(request))
+    return JsonResponse({"visit": visit_to_dict(visit)})

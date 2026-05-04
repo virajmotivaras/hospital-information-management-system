@@ -221,6 +221,39 @@ textarea:focus {
   border-top: 1px solid var(--line);
 }
 
+.doctor-vitals {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+
+.doctor-vitals h3 {
+  margin: 0 0 10px;
+  font-size: 15px;
+}
+
+.growth-chart {
+  margin-top: 14px;
+  min-height: 180px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 10px;
+  background: #fbfdfd;
+}
+
+.growth-chart svg {
+  display: block;
+  width: 100%;
+  height: 220px;
+}
+
+.chart-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 8px;
+}
+
 .search {
   max-width: 340px;
 }

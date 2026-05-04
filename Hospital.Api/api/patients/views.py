@@ -2,11 +2,11 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 
 from api.common import handle_api_errors, parse_json, require_roles
-from api.serializers import appointment_to_dict, bill_to_dict, patient_to_dict, prescription_to_dict
+from api.serializers import appointment_to_dict, bill_to_dict, patient_to_dict, prescription_to_dict, visit_to_dict
 from domain.billing.services import create_patient_bill
 from domain.common.roles import ADMIN, DOCTOR, RECEPTION, has_any_role
 from domain.patients.services import register_or_update_patient
-from repository.repositories import appointment_repository, billing_repository, patient_repository, prescription_repository
+from repository.repositories import appointment_repository, billing_repository, patient_repository, prescription_repository, visit_repository
 
 
 @csrf_exempt
@@ -37,6 +37,7 @@ def patient_history(request, patient_id):
             "upcoming": [appointment_to_dict(item) for item in appointment_repository.upcoming_for_patient(patient_id)],
             "past": [appointment_to_dict(item) for item in appointment_repository.past_for_patient(patient_id)],
         },
+        "visits": [visit_to_dict(item) for item in visit_repository.visits_for_patient(patient_id)],
     }
     if has_any_role(request.user, [ADMIN, DOCTOR]):
         prescriptions = prescription_repository.list_prescriptions_for_patient(patient_id)

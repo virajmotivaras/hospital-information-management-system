@@ -29,8 +29,10 @@ def visit_to_dict(visit):
         "reason": visit.reason,
         "status": visit.status,
         "temperature_c": str(visit.temperature_c) if visit.temperature_c is not None else "",
+        "height_cm": str(visit.height_cm) if visit.height_cm is not None else "",
         "weight_kg": str(visit.weight_kg) if visit.weight_kg is not None else "",
         "blood_pressure": visit.blood_pressure,
+        "pulse_bpm": str(visit.pulse_bpm) if visit.pulse_bpm is not None else "",
         "check_in_time": visit.check_in_time.isoformat(),
     }
 

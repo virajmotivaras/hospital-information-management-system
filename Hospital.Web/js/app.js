@@ -318,10 +318,57 @@ function populateDepartmentSelects() {
     select.innerHTML = options;
     if (current) select.value = current;
   });
+  updateReceptionVitalsVisibility(document.getElementById("checkin-form"));
 }
 
 function formData(form) {
   return Object.fromEntries(new FormData(form).entries());
+}
+
+function normalizeDepartment(value) {
+  return String(value || "").toLowerCase().replace(/[^a-z]/g, "");
+}
+
+function departmentCategory(value) {
+  const department = (state.session?.departments || []).find((item) => item.code === value);
+  const haystack = `${value || ""} ${department?.name || ""}`;
+  const normalized = normalizeDepartment(haystack);
+  if (normalized.includes("ped")) return "peds";
+  if (normalized.includes("gyn")) return "gynac";
+  return "";
+}
+
+function departmentCodeForCategory(category) {
+  return (state.session?.departments || []).find((item) => departmentCategory(item.code) === category)?.code || "";
+}
+
+function applyAgeDepartmentDefault(form) {
+  const age = Number(form.age_years?.value);
+  if (!Number.isFinite(age)) return;
+  const targetCode = departmentCodeForCategory(age < 18 ? "peds" : "gynac");
+  if (targetCode && form.department) {
+    form.department.value = targetCode;
+    updateReceptionVitalsVisibility(form);
+  }
+}
+
+function updateReceptionVitalsVisibility(form) {
+  if (!form) return;
+  const category = departmentCategory(form.department?.value);
+  const visibleFields = category === "peds"
+    ? ["temperature_c", "height_cm", "weight_kg"]
+    : category === "gynac"
+      ? ["blood_pressure", "pulse_bpm", "weight_kg"]
+      : ["temperature_c", "height_cm", "weight_kg", "blood_pressure", "pulse_bpm"];
+
+  document.querySelectorAll("[data-vital-field]").forEach((field) => {
+    const isVisible = visibleFields.includes(field.dataset.vitalField);
+    field.classList.toggle("hidden", !isVisible);
+    if (!isVisible) {
+      const input = field.querySelector("input");
+      if (input) input.value = "";
+    }
+  });
 }
 
 function escapeHtml(value) {
@@ -344,6 +391,10 @@ function patientLine(patient) {
 function departmentName(code) {
   const department = (state.session?.departments || []).find((item) => item.code === code);
   return department ? department.name : code;
+}
+
+function visitHasPedsVitals(visit) {
+  return visit.height_cm || visit.weight_kg || visit.temperature_c;
 }
 
 function startOfWeek(date) {
@@ -677,6 +728,92 @@ function addMedicineRow(values = {}) {
   medicineList.appendChild(row);
 }
 
+function setDoctorVitalsVisibility(visit) {
+  const panel = document.getElementById("doctor-vitals-panel");
+  const form = document.getElementById("visit-vitals-form");
+  if (!panel || !form || !visit) return;
+
+  const category = departmentCategory(visit.department);
+  const visibleFields = category === "peds"
+    ? ["temperature_c", "height_cm", "weight_kg"]
+    : category === "gynac"
+      ? ["blood_pressure", "pulse_bpm", "weight_kg"]
+      : ["temperature_c", "height_cm", "weight_kg", "blood_pressure", "pulse_bpm"];
+
+  panel.classList.remove("hidden");
+  form.temperature_c.value = visit.temperature_c || "";
+  form.height_cm.value = visit.height_cm || "";
+  form.weight_kg.value = visit.weight_kg || "";
+  form.blood_pressure.value = visit.blood_pressure || "";
+  form.pulse_bpm.value = visit.pulse_bpm || "";
+
+  document.querySelectorAll("[data-doctor-vital-field]").forEach((field) => {
+    field.classList.toggle("hidden", !visibleFields.includes(field.dataset.doctorVitalField));
+  });
+}
+
+function renderGrowthChart(visits) {
+  const container = document.getElementById("growth-chart");
+  if (!container) return;
+  const points = visits
+    .filter((visit) => visitHasPedsVitals(visit))
+    .slice()
+    .reverse();
+
+  if (!points.length) {
+    container.innerHTML = `<div class="meta">No pediatric vitals recorded yet.</div>`;
+    return;
+  }
+
+  const metrics = [
+    { key: "height_cm", label: "Height cm", color: "#176b70" },
+    { key: "weight_kg", label: "Weight kg", color: "#8a4f1d" },
+    { key: "temperature_c", label: "Temp C", color: "#9b1c31" },
+  ];
+  const width = 640;
+  const height = 220;
+  const padding = 28;
+  const x = (index) => points.length === 1
+    ? width / 2
+    : padding + (index * (width - padding * 2)) / (points.length - 1);
+  const lines = metrics.map((metric) => {
+    const values = points
+      .map((visit, index) => ({ value: Number(visit[metric.key]), index }))
+      .filter((item) => Number.isFinite(item.value));
+    if (!values.length) return "";
+    const min = Math.min(...values.map((item) => item.value));
+    const max = Math.max(...values.map((item) => item.value));
+    const span = max - min || 1;
+    const y = (value) => height - padding - ((value - min) * (height - padding * 2)) / span;
+    const path = values.map((item) => `${x(item.index)},${y(item.value)}`).join(" ");
+    const circles = values.map((item) => `<circle cx="${x(item.index)}" cy="${y(item.value)}" r="4" fill="${metric.color}"><title>${escapeHtml(metric.label)}: ${escapeHtml(item.value)}</title></circle>`).join("");
+    return `<polyline points="${path}" fill="none" stroke="${metric.color}" stroke-width="2"></polyline>${circles}`;
+  }).join("");
+
+  container.innerHTML = `
+    <svg viewBox="0 0 ${width} ${height}" role="img" aria-label="Growth chart">
+      <line x1="${padding}" y1="${height - padding}" x2="${width - padding}" y2="${height - padding}" stroke="#9aa8b3"></line>
+      <line x1="${padding}" y1="${padding}" x2="${padding}" y2="${height - padding}" stroke="#9aa8b3"></line>
+      ${lines}
+    </svg>
+    <div class="chart-legend">
+      ${metrics.map((metric) => `<span class="meta"><span style="color:${metric.color}; font-weight:800;">■</span> ${escapeHtml(metric.label)}</span>`).join("")}
+    </div>
+  `;
+}
+
+async function loadSelectedVisitHistory() {
+  if (!state.selectedVisit) return;
+  setDoctorVitalsVisibility(state.selectedVisit);
+  if (departmentCategory(state.selectedVisit.department) !== "peds") {
+    const chart = document.getElementById("growth-chart");
+    if (chart) chart.innerHTML = `<div class="meta">Growth chart is shown for pediatric visits.</div>`;
+    return;
+  }
+  const data = await http.request(`/api/patients/${encodeURIComponent(state.selectedVisit.patient.id)}/history/`);
+  renderGrowthChart(data.visits || []);
+}
+
 function selectVisit(visitId) {
   const visit = state.queue.find((item) => String(item.id) === String(visitId));
   if (!visit) return;
@@ -687,6 +824,7 @@ function selectVisit(visitId) {
   setLastPrescriptionPrintUrl("");
   document.getElementById("selected-patient-label").textContent = visit.patient.full_name;
   switchView("prescription");
+  loadSelectedVisitHistory().catch((error) => setStatus(error.message, true));
 }
 
 async function openAppointmentPrescription(appointmentId) {
@@ -817,6 +955,16 @@ function bindEvents() {
     loadPatients(event.target.value).catch((error) => setStatus(error.message, true));
   });
 
+  bindIfPresent("checkin-form", "input", (event) => {
+    if (event.target.name === "age_years") applyAgeDepartmentDefault(event.currentTarget);
+  });
+  bindIfPresent("checkin-form", "change", (event) => {
+    if (event.target.name === "department") updateReceptionVitalsVisibility(event.currentTarget);
+  });
+  bindIfPresent("appointment-form", "input", (event) => {
+    if (event.target.name === "age_years") applyAgeDepartmentDefault(event.currentTarget);
+  });
+
   bindIfPresent("appointment-patient-name", "input", (event) => {
     window.clearTimeout(appointmentPatientSearchTimer);
     renderLocalAppointmentPatientSuggestions(event.target.value);
@@ -836,6 +984,7 @@ function bindEvents() {
       event.target.reset();
       await loadQueue();
       await loadPatients();
+      updateReceptionVitalsVisibility(event.target);
       setStatus("Checked in");
     } catch (error) {
       setStatus(error.message, true);
@@ -884,6 +1033,23 @@ function bindEvents() {
       if (state.selectedPatientId) await openPatientDetail(state.selectedPatientId);
       setLastPrescriptionPrintUrl(result.print_url);
       setStatus("Prescription saved");
+    } catch (error) {
+      setStatus(error.message, true);
+    }
+  });
+
+  bindIfPresent("visit-vitals-form", "submit", async (event) => {
+    event.preventDefault();
+    if (!state.selectedVisit) return;
+    try {
+      const result = await http.request(`/api/visits/${encodeURIComponent(state.selectedVisit.id)}/vitals/`, {
+        method: "PATCH",
+        body: JSON.stringify(formData(event.target)),
+      });
+      state.selectedVisit = result.visit;
+      state.queue = state.queue.map((visit) => String(visit.id) === String(result.visit.id) ? result.visit : visit);
+      await loadSelectedVisitHistory();
+      setStatus("Vitals saved");
     } catch (error) {
       setStatus(error.message, true);
     }

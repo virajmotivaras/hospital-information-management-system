@@ -72,6 +72,9 @@ class PatientFlowApiTests(TestCase):
             {
                 "full_name": "Kavya Menon",
                 "department": "GENERAL",
+                "temperature_c": "37.2",
+                "height_cm": "102.5",
+                "weight_kg": "16.4",
             },
         ).json()
 
@@ -117,6 +120,42 @@ class PatientFlowApiTests(TestCase):
         self.assertContains(print_response, "3 days")
         self.assertContains(print_response, "Viral upper respiratory infection")
         self.assertContains(print_response, "Throat congestion present.")
+
+    def test_doctor_can_update_visit_vitals_and_history_includes_visits(self):
+        checkin = self.post_json(
+            "/api/visits/",
+            {
+                "full_name": "Vitals Child",
+                "department": "GENERAL",
+                "temperature_c": "37.0",
+                "height_cm": "100.0",
+                "weight_kg": "15.5",
+            },
+        ).json()
+
+        self.client.logout()
+        self.client.login(username="doctor", password="test-pass")
+        response = self.client.patch(
+            f"/api/visits/{checkin['visit']['id']}/vitals/",
+            data=json.dumps(
+                {
+                    "temperature_c": "38.1",
+                    "height_cm": "101.2",
+                    "weight_kg": "16.1",
+                    "blood_pressure": "100/70",
+                    "pulse_bpm": "98",
+                }
+            ),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["visit"]["height_cm"], "101.2")
+        self.assertEqual(response.json()["visit"]["pulse_bpm"], "98")
+
+        history = self.client.get(f"/api/patients/{checkin['patient_id']}/history/")
+        self.assertEqual(history.status_code, 200)
+        self.assertEqual(history.json()["visits"][0]["weight_kg"], "16.10")
 
     def test_doctor_can_view_patient_appointment_and_prescription_history(self):
         patient = Patient.objects.create(full_name="Sara Khan", department="GENERAL")

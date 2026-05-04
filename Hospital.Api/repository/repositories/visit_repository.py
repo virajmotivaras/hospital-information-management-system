@@ -12,8 +12,10 @@ def create_visit(patient, visit_type, data):
         department=data["department"],
         reason=data.get("reason", ""),
         temperature_c=data.get("temperature_c") or None,
+        height_cm=data.get("height_cm") or None,
         weight_kg=data.get("weight_kg") or None,
         blood_pressure=data.get("blood_pressure", ""),
+        pulse_bpm=data.get("pulse_bpm") or None,
     )
 
 
@@ -69,6 +71,14 @@ def recent_visits(limit=30):
     return list(Visit.objects.select_related("patient").order_by("-check_in_time")[:limit])
 
 
+def visits_for_patient(patient_id, limit=40):
+    return list(
+        Visit.objects.select_related("patient")
+        .filter(patient_id=patient_id)
+        .order_by("-check_in_time")[:limit]
+    )
+
+
 def set_visit_status(visit_id, status):
     visit = Visit.objects.select_related("patient").get(id=visit_id)
     visit.status = status
@@ -78,3 +88,23 @@ def set_visit_status(visit_id, status):
 
 def get_visit(visit_id):
     return Visit.objects.select_related("patient").get(id=visit_id)
+
+
+def update_visit_vitals(visit_id, data):
+    visit = Visit.objects.select_related("patient").get(id=visit_id)
+    visit.temperature_c = data.get("temperature_c") or None
+    visit.height_cm = data.get("height_cm") or None
+    visit.weight_kg = data.get("weight_kg") or None
+    visit.blood_pressure = data.get("blood_pressure", "")
+    visit.pulse_bpm = data.get("pulse_bpm") or None
+    visit.save(
+        update_fields=[
+            "temperature_c",
+            "height_cm",
+            "weight_kg",
+            "blood_pressure",
+            "pulse_bpm",
+            "updated_at",
+        ]
+    )
+    return visit
