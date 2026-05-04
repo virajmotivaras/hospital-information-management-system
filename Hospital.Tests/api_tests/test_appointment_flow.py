@@ -5,7 +5,7 @@ from django.test import Client, TestCase
 from django.contrib.auth.models import Group, User
 from django.utils import timezone
 
-from repository.models import Appointment, Department, HospitalProfile, Patient
+from repository.models import Appointment, Department, HospitalProfile, Patient, Visit
 
 
 class AppointmentApiTests(TestCase):
@@ -165,3 +165,28 @@ class AppointmentApiTests(TestCase):
 
         self.assertEqual(response.status_code, 201)
         self.assertEqual(Appointment.objects.count(), 2)
+
+    def test_todays_appointments_appear_in_consultation_queue(self):
+        patient = Patient.objects.create(full_name="Queue Appointment", department="GENERAL")
+        appointment = Appointment.objects.create(
+            patient=patient,
+            department="GENERAL",
+            scheduled_for=timezone.now() + timedelta(hours=1),
+            reason="Scheduled consultation",
+        )
+
+        self.client.logout()
+        doctor = User.objects.create_user("queue-doctor", password="test-pass")
+        doctor.groups.add(Group.objects.get(name="Doctor"))
+        self.client.login(username="queue-doctor", password="test-pass")
+
+        response = self.client.get("/api/visits/")
+
+        self.assertEqual(response.status_code, 200)
+        visits = response.json()["visits"]
+        self.assertEqual(len(visits), 1)
+        self.assertEqual(visits[0]["patient"]["full_name"], "Queue Appointment")
+        self.assertEqual(visits[0]["reason"], "Scheduled consultation")
+        appointment.refresh_from_db()
+        self.assertEqual(appointment.status, Appointment.Status.CHECKED_IN)
+        self.assertEqual(Visit.objects.count(), 1)

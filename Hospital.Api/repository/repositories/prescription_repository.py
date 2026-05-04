@@ -6,7 +6,10 @@ def create_prescription(patient, visit, data):
         patient=patient,
         visit=visit,
         doctor_name=data["doctor_name"].strip(),
+        symptoms=data.get("symptoms", ""),
+        symptom_entries=data.get("symptom_entries", []),
         diagnosis=data.get("diagnosis", ""),
+        examination_findings=data.get("examination_findings", ""),
         advice=data.get("advice", ""),
         follow_up_date=data.get("follow_up_date") or None,
     )

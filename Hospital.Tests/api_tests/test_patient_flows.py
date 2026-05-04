@@ -84,7 +84,12 @@ class PatientFlowApiTests(TestCase):
                 "patient_id": checkin["patient_id"],
                 "visit_id": checkin["visit"]["id"],
                 "doctor_name": "Iyer",
-                "diagnosis": "Routine antenatal checkup",
+                "symptom_entries": [
+                    {"symptom": "R50.9 - Fever, unspecified", "days": 2},
+                    {"symptom": "R05.9 - Cough, unspecified", "days": 3},
+                ],
+                "diagnosis": "Viral upper respiratory infection",
+                "examination_findings": "Throat congestion present.",
                 "advice": "Hydration and rest",
                 "items": [
                     {
@@ -99,9 +104,19 @@ class PatientFlowApiTests(TestCase):
 
         self.assertEqual(response.status_code, 201)
         self.assertEqual(Prescription.objects.count(), 1)
+        prescription_payload = response.json()["prescription"]
+        self.assertEqual(len(prescription_payload["symptom_entries"]), 2)
+        self.assertEqual(prescription_payload["diagnosis"], "Viral upper respiratory infection")
+        self.assertEqual(prescription_payload["examination_findings"], "Throat congestion present.")
         print_response = self.client.get(response.json()["print_url"])
         self.assertContains(print_response, "Folic Acid")
         self.assertContains(print_response, "Kavya Menon")
+        self.assertContains(print_response, "R50.9 - Fever, unspecified")
+        self.assertContains(print_response, "2 days")
+        self.assertContains(print_response, "R05.9 - Cough, unspecified")
+        self.assertContains(print_response, "3 days")
+        self.assertContains(print_response, "Viral upper respiratory infection")
+        self.assertContains(print_response, "Throat congestion present.")
 
     def test_doctor_can_view_patient_appointment_and_prescription_history(self):
         patient = Patient.objects.create(full_name="Sara Khan", department="GENERAL")
@@ -117,7 +132,7 @@ class PatientFlowApiTests(TestCase):
             scheduled_for=timezone.now() + timedelta(days=5),
             reason="Next visit",
         )
-        prescription = Prescription.objects.create(patient=patient, doctor_name="Doctor", diagnosis="Follow-up")
+        prescription = Prescription.objects.create(patient=patient, doctor_name="Doctor", symptoms="Follow-up")
 
         self.client.logout()
         self.client.login(username="doctor", password="test-pass")

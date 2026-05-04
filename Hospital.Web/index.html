@@ -255,13 +255,22 @@
                 <input name="follow_up_date" type="date">
               </label>
               <label class="wide">
-                Diagnosis
+                Symptoms
                 <div class="autocomplete-row">
-                  <input id="diagnosis-symptom-input" list="symptom-options" placeholder="Search or type symptom, then add">
-                  <button class="ghost" id="add-diagnosis-symptom" type="button">Add</button>
+                  <input id="symptom-input" list="symptom-options" placeholder="Search ICD-10 symptom/sign, then add">
+                  <input id="symptom-days-input" type="number" min="0" max="3650" placeholder="Days">
+                  <button class="ghost" id="add-symptom" type="button">Add</button>
                 </div>
                 <datalist id="symptom-options"></datalist>
-                <textarea name="diagnosis" rows="3"></textarea>
+                <div class="symptom-list" id="symptom-list"></div>
+              </label>
+              <label class="wide">
+                Diagnosis
+                <textarea name="diagnosis" rows="3" placeholder="Doctor diagnosis"></textarea>
+              </label>
+              <label class="wide">
+                Examination findings
+                <textarea name="examination_findings" rows="3" placeholder="Clinical examination findings"></textarea>
               </label>
               <label class="wide">
                 Advice
@@ -269,7 +278,10 @@
               </label>
               <div class="wide medicine-list" id="medicine-list"></div>
               <button class="ghost wide" id="add-medicine" type="button">Add Medicine</button>
-              <button class="primary wide" type="submit">Save and Print Prescription</button>
+              <div class="form-actions wide">
+                <button class="primary" type="submit">Save Prescription</button>
+                <button class="ghost" id="print-prescription" type="button" disabled>Print Prescription</button>
+              </div>
             </form>
           </section>
           <section class="panel">
@@ -283,6 +295,7 @@
       </section>
     </main>
 
+    <script src="/static/js/data/icd10-symptoms.js"></script>
     <script src="/static/js/api/http.js"></script>
     <script src="/static/js/app.js"></script>
   </body>

@@ -7,14 +7,18 @@
   </head>
   <body>
     <main class="print-page">
-      <header class="print-header">
-        <div>
-          {% if hospital.logo %}<img class="print-logo" src="{{ hospital.logo.url }}" alt="">{% endif %}
-          <h1>{{ hospital.hospital_name }}</h1>
-          <p>{{ hospital.tagline }}</p>
-          {% if hospital.address %}<p>{{ hospital.address|linebreaksbr }}</p>{% endif %}
-          {% if hospital.phone_number %}<p>{{ hospital.phone_number }}</p>{% endif %}
-        </div>
+      <header class="print-header {% if not hospital.include_prescription_print_header %}print-header-plain{% endif %}">
+        {% if hospital.include_prescription_print_header %}
+          <div>
+            {% if hospital.logo %}<img class="print-logo" src="{{ hospital.logo.url }}" alt="">{% endif %}
+            <h1>{{ hospital.hospital_name }}</h1>
+            <p>{{ hospital.tagline }}</p>
+            {% if hospital.address %}<p>{{ hospital.address|linebreaksbr }}</p>{% endif %}
+            {% if hospital.phone_number %}<p>{{ hospital.phone_number }}</p>{% endif %}
+          </div>
+        {% else %}
+          <div></div>
+        {% endif %}
         <button onclick="window.print()">Print</button>
       </header>
 
@@ -26,8 +30,37 @@
       </section>
 
       <section>
+        <h2>Symptoms</h2>
+        {% if prescription.symptom_entries %}
+        <table>
+          <thead>
+            <tr>
+              <th>Symptom</th>
+              <th>Persisting</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for symptom in prescription.symptom_entries %}
+            <tr>
+              <td>{{ symptom.symptom }}</td>
+              <td>{% if symptom.days is not None %}{{ symptom.days }} day{{ symptom.days|pluralize }}{% endif %}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <p>{{ prescription.symptoms|linebreaksbr }}</p>
+        {% endif %}
+      </section>
+
+      <section>
         <h2>Diagnosis</h2>
         <p>{{ prescription.diagnosis|linebreaksbr }}</p>
+      </section>
+
+      <section>
+        <h2>Examination Findings</h2>
+        <p>{{ prescription.examination_findings|linebreaksbr }}</p>
       </section>
 
       <section>

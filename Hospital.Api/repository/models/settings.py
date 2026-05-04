@@ -12,6 +12,10 @@ class HospitalProfile(models.Model):
         default=30,
         help_text="Default appointment slot length used to prevent overlapping bookings.",
     )
+    include_prescription_print_header = models.BooleanField(
+        default=False,
+        help_text="Show hospital name, logo, address, and phone number on printed prescriptions.",
+    )
     backup_folder_path = models.CharField(
         max_length=500,
         blank=True,

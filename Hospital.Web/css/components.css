@@ -82,6 +82,12 @@ textarea:focus {
   background: var(--primary-strong);
 }
 
+.primary:disabled,
+.ghost:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
 .ghost {
   color: var(--primary);
   background: var(--soft);
@@ -228,7 +234,25 @@ textarea:focus {
 
 .autocomplete-row {
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: 1fr 120px auto;
+  gap: 10px;
+}
+
+.symptom-list {
+  display: grid;
+  gap: 8px;
+}
+
+.symptom-row {
+  display: grid;
+  grid-template-columns: 1fr 120px auto;
+  gap: 10px;
+  align-items: center;
+}
+
+.form-actions {
+  display: flex;
+  flex-wrap: wrap;
   gap: 10px;
 }
 
@@ -345,6 +369,17 @@ textarea:focus {
   background: #e7f2f1;
 }
 
+.calendar-appointment.clickable {
+  cursor: pointer;
+}
+
+.calendar-appointment.clickable:hover,
+.calendar-appointment.clickable:focus {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+  background: #f3fbfa;
+}
+
 .calendar-appointment strong {
   display: block;
   margin-bottom: 4px;
@@ -365,6 +400,7 @@ textarea:focus {
   .form-grid,
   .vitals,
   .medicine-row,
+  .symptom-row,
   .autocomplete-row,
   .history-grid {
     grid-template-columns: 1fr;

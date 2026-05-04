@@ -27,6 +27,12 @@ footer {
   padding-bottom: 14px;
 }
 
+.print-header-plain {
+  justify-content: flex-end;
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
 .print-header h1 {
   margin: 0;
 }

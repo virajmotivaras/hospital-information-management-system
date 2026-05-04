@@ -9,7 +9,12 @@ const state = {
   appointmentPatientSuggestions: [],
   patientCache: [],
   appointmentPatientSearchToken: 0,
+  calendarRefreshTimer: null,
+  calendarRefreshInFlight: false,
+  lastPrescriptionPrintUrl: "",
 };
+
+const CALENDAR_REFRESH_MS = 8000;
 
 const titles = {
   calendar: ["Calendar", "Weekly appointment view."],
@@ -19,7 +24,7 @@ const titles = {
   prescription: ["Prescription", "Write and print patient prescriptions."],
 };
 
-const symptomSuggestions = [
+const commonSymptomSuggestions = [
   "Abdominal bloating",
   "Abdominal cramps",
   "Abdominal distension",
@@ -202,6 +207,13 @@ const symptomSuggestions = [
   "Yellow eyes",
 ].sort((a, b) => a.localeCompare(b));
 
+const symptomSuggestions = [
+  ...new Set([
+    ...(window.icd10SymptomSuggestions || []).map((item) => `${item.code} - ${item.description}`),
+    ...commonSymptomSuggestions,
+  ]),
+].sort((a, b) => a.localeCompare(b));
+
 function setStatus(message, isError = false) {
   const el = document.getElementById("save-status");
   el.textContent = message;
@@ -210,22 +222,56 @@ function setStatus(message, isError = false) {
 
 function loadSymptomSuggestions() {
   const datalist = document.getElementById("symptom-options");
+  if (!datalist) return;
   datalist.innerHTML = symptomSuggestions
     .map((symptom) => `<option value="${escapeHtml(symptom)}"></option>`)
     .join("");
 }
 
-function addDiagnosisSymptom() {
-  const input = document.getElementById("diagnosis-symptom-input");
-  const textarea = document.querySelector("#prescription-form [name=diagnosis]");
+function addSymptom() {
+  const input = document.getElementById("symptom-input");
+  const daysInput = document.getElementById("symptom-days-input");
   const symptom = input.value.trim();
   if (!symptom) return;
 
-  const existing = textarea.value.trim();
-  const separator = existing ? "; " : "";
-  textarea.value = `${existing}${separator}${symptom}`;
+  addSymptomRow({ symptom, days: daysInput.value.trim() });
   input.value = "";
-  textarea.focus();
+  daysInput.value = "";
+  input.focus();
+}
+
+function addSymptomRow(values = {}) {
+  const symptomList = document.getElementById("symptom-list");
+  if (!symptomList) return;
+  const row = document.createElement("div");
+  row.className = "symptom-row";
+  row.innerHTML = `
+    <input data-field="symptom" list="symptom-options" value="${escapeHtml(values.symptom || "")}" placeholder="Symptom">
+    <input data-field="days" type="number" min="0" max="3650" value="${escapeHtml(values.days ?? "")}" placeholder="Days">
+    <button class="ghost" data-action="remove-symptom" type="button">Remove</button>
+  `;
+  symptomList.appendChild(row);
+}
+
+function symptomEntries() {
+  return [...document.querySelectorAll(".symptom-row")]
+    .map((row) => ({
+      symptom: row.querySelector("[data-field=symptom]").value.trim(),
+      days: row.querySelector("[data-field=days]").value.trim(),
+    }))
+    .filter((item) => item.symptom);
+}
+
+function setLastPrescriptionPrintUrl(url = "") {
+  state.lastPrescriptionPrintUrl = url;
+  const printButton = document.getElementById("print-prescription");
+  if (!printButton) return;
+  printButton.disabled = !url;
+}
+
+function bindIfPresent(id, eventName, handler) {
+  const element = document.getElementById(id);
+  if (element) element.addEventListener(eventName, handler);
 }
 
 async function loadSession() {
@@ -329,6 +375,13 @@ function sameLocalDate(first, second) {
     && first.getDate() === second.getDate();
 }
 
+function canOpenAppointmentPrescription(appointment) {
+  return state.session?.permissions?.prescription
+    && sameLocalDate(new Date(appointment.scheduled_for), new Date())
+    && appointment.status !== "COMPLETED"
+    && appointment.status !== "CANCELLED";
+}
+
 function renderCalendar() {
   const weekStart = state.calendarWeekStart || startOfWeek(new Date());
   state.calendarWeekStart = weekStart;
@@ -343,8 +396,13 @@ function renderCalendar() {
       sameLocalDate(new Date(appointment.scheduled_for), day)
     );
     const items = appointments.length
-      ? appointments.map((appointment) => `
-        <article class="calendar-appointment">
+      ? appointments.map((appointment) => {
+        const canOpenPrescription = canOpenAppointmentPrescription(appointment);
+        return `
+        <article
+          class="calendar-appointment ${canOpenPrescription ? "clickable" : ""}"
+          ${canOpenPrescription ? `data-action="open-appointment-prescription" data-appointment-id="${escapeHtml(appointment.id)}" role="button" tabindex="0"` : ""}
+        >
           <strong>${escapeHtml(formatCalendarTime(appointment.scheduled_for))} ${escapeHtml(appointment.patient.full_name)}</strong>
           <div class="meta">
             <span class="badge">${escapeHtml(departmentName(appointment.department))}</span>
@@ -352,7 +410,8 @@ function renderCalendar() {
           </div>
           <div class="meta">${appointment.reason ? escapeHtml(appointment.reason) : "No reason entered"}</div>
         </article>
-      `).join("")
+      `;
+      }).join("")
       : `<div class="calendar-empty">No appointments</div>`;
 
     return `
@@ -379,6 +438,31 @@ async function loadCalendarAppointments() {
   renderCalendar();
 }
 
+function isCalendarActive() {
+  return document.getElementById("view-calendar")?.classList.contains("active");
+}
+
+async function refreshActiveCalendar() {
+  if (!state.session?.permissions?.calendar || !isCalendarActive() || document.hidden) return;
+  if (state.calendarRefreshInFlight) return;
+
+  state.calendarRefreshInFlight = true;
+  try {
+    await loadCalendarAppointments();
+  } catch (error) {
+    setStatus(error.message, true);
+  } finally {
+    state.calendarRefreshInFlight = false;
+  }
+}
+
+function startCalendarAutoRefresh() {
+  if (!state.session?.permissions?.calendar || state.calendarRefreshTimer) return;
+  state.calendarRefreshTimer = window.setInterval(() => {
+    refreshActiveCalendar();
+  }, CALENDAR_REFRESH_MS);
+}
+
 function renderQueue() {
   const queueList = document.getElementById("queue-list");
   const prescriptionQueue = document.getElementById("prescription-queue");
@@ -400,8 +484,8 @@ function renderQueue() {
       </article>
     `).join("")
     : `<div class="record-row">No patients waiting.</div>`;
-  queueList.innerHTML = html;
-  prescriptionQueue.innerHTML = html;
+  if (queueList) queueList.innerHTML = html;
+  if (prescriptionQueue) prescriptionQueue.innerHTML = html;
 }
 
 async function loadQueue() {
@@ -530,7 +614,8 @@ function prescriptionCard(item) {
   return `
     <article class="mini-card">
       <strong>${escapeHtml(new Date(item.created_at).toLocaleString())}</strong>
-      <div class="meta">Dr. ${escapeHtml(item.doctor_name)} | ${item.diagnosis ? escapeHtml(item.diagnosis) : "No diagnosis entered"}</div>
+      <div class="meta">Dr. ${escapeHtml(item.doctor_name)} | ${item.symptoms ? escapeHtml(item.symptoms) : "No symptoms entered"}</div>
+      <div class="meta">${item.diagnosis ? `Diagnosis: ${escapeHtml(item.diagnosis)}` : "No diagnosis entered"}</div>
       <div class="meta">${medicines || "No medicines listed"}</div>
       <button class="ghost" data-action="print-prescription" data-print-url="${escapeHtml(item.print_url)}" type="button">Print</button>
     </article>
@@ -578,6 +663,8 @@ async function openPatientDetail(patientId) {
 }
 
 function addMedicineRow(values = {}) {
+  const medicineList = document.getElementById("medicine-list");
+  if (!medicineList) return;
   const row = document.createElement("div");
   row.className = "medicine-row";
   row.innerHTML = `
@@ -587,7 +674,7 @@ function addMedicineRow(values = {}) {
     <input name="duration" placeholder="Duration" value="${escapeHtml(values.duration || "")}">
     <input name="instructions" placeholder="Instructions" value="${escapeHtml(values.instructions || "")}">
   `;
-  document.getElementById("medicine-list").appendChild(row);
+  medicineList.appendChild(row);
 }
 
 function selectVisit(visitId) {
@@ -597,8 +684,33 @@ function selectVisit(visitId) {
   const form = document.getElementById("prescription-form");
   form.patient_id.value = visit.patient.id;
   form.visit_id.value = visit.id;
+  setLastPrescriptionPrintUrl("");
   document.getElementById("selected-patient-label").textContent = visit.patient.full_name;
   switchView("prescription");
+}
+
+async function openAppointmentPrescription(appointmentId) {
+  const appointment = state.calendarAppointments.find((item) => String(item.id) === String(appointmentId));
+  if (!appointment) return;
+  if (!canOpenAppointmentPrescription(appointment)) {
+    setStatus("Only today's active appointments can be opened for prescription.", true);
+    return;
+  }
+
+  setStatus("Opening prescription...");
+  await loadQueue();
+  const activeVisits = state.queue.filter((visit) => String(visit.patient.id) === String(appointment.patient.id));
+  const visit = activeVisits.find((item) =>
+    item.department === appointment.department && item.reason === appointment.reason
+  ) || activeVisits[0];
+
+  if (!visit) {
+    setStatus("No active consultation visit was found for this appointment.", true);
+    return;
+  }
+
+  selectVisit(visit.id);
+  setStatus("Ready for prescription");
 }
 
 function switchView(viewName) {
@@ -623,8 +735,16 @@ function bindEvents() {
   });
 
   document.body.addEventListener("click", (event) => {
+    const appointmentCard = event.target.closest("[data-action='open-appointment-prescription']");
+    if (appointmentCard) {
+      openAppointmentPrescription(appointmentCard.dataset.appointmentId).catch((error) => setStatus(error.message, true));
+      return;
+    }
     if (event.target.dataset.action === "consult") {
       selectVisit(event.target.dataset.visitId);
+    }
+    if (event.target.dataset.action === "remove-symptom") {
+      event.target.closest(".symptom-row")?.remove();
     }
     if (event.target.closest("[data-action='view-patient']")) {
       const row = event.target.closest("[data-action='view-patient']");
@@ -638,44 +758,66 @@ function bindEvents() {
     }
   });
 
+  document.body.addEventListener("keydown", (event) => {
+    const appointmentCard = event.target.closest("[data-action='open-appointment-prescription']");
+    if (!appointmentCard || (event.key !== "Enter" && event.key !== " ")) return;
+    event.preventDefault();
+    openAppointmentPrescription(appointmentCard.dataset.appointmentId).catch((error) => setStatus(error.message, true));
+  });
+
   document.addEventListener("click", (event) => {
     if (!event.target.closest(".autocomplete-field")) {
       renderAppointmentPatientSuggestions([]);
     }
   });
 
-  document.getElementById("refresh-queue").addEventListener("click", loadQueue);
-  document.getElementById("refresh-appointments").addEventListener("click", loadAppointments);
-  document.getElementById("previous-week").addEventListener("click", () => {
+  bindIfPresent("refresh-queue", "click", loadQueue);
+  bindIfPresent("refresh-appointments", "click", loadAppointments);
+  window.addEventListener("focus", () => {
+    refreshActiveCalendar();
+  });
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) refreshActiveCalendar();
+  });
+  bindIfPresent("previous-week", "click", () => {
     state.calendarWeekStart = addDays(state.calendarWeekStart || startOfWeek(new Date()), -7);
     loadCalendarAppointments().catch((error) => setStatus(error.message, true));
   });
-  document.getElementById("current-week").addEventListener("click", () => {
+  bindIfPresent("current-week", "click", () => {
     state.calendarWeekStart = startOfWeek(new Date());
     loadCalendarAppointments().catch((error) => setStatus(error.message, true));
   });
-  document.getElementById("next-week").addEventListener("click", () => {
+  bindIfPresent("next-week", "click", () => {
     state.calendarWeekStart = addDays(state.calendarWeekStart || startOfWeek(new Date()), 7);
     loadCalendarAppointments().catch((error) => setStatus(error.message, true));
   });
-  document.getElementById("close-patient-detail").addEventListener("click", () => {
-    document.getElementById("patient-detail").classList.add("hidden");
+  bindIfPresent("close-patient-detail", "click", () => {
+    document.getElementById("patient-detail")?.classList.add("hidden");
     state.selectedPatientId = null;
   });
-  document.getElementById("add-medicine").addEventListener("click", () => addMedicineRow());
-  document.getElementById("add-diagnosis-symptom").addEventListener("click", addDiagnosisSymptom);
-  document.getElementById("diagnosis-symptom-input").addEventListener("keydown", (event) => {
+  bindIfPresent("add-medicine", "click", () => addMedicineRow());
+  bindIfPresent("add-symptom", "click", addSymptom);
+  bindIfPresent("symptom-input", "keydown", (event) => {
     if (event.key === "Enter") {
       event.preventDefault();
-      addDiagnosisSymptom();
+      addSymptom();
     }
   });
+  bindIfPresent("symptom-days-input", "keydown", (event) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      addSymptom();
+    }
+  });
+  bindIfPresent("print-prescription", "click", () => {
+    if (state.lastPrescriptionPrintUrl) window.open(state.lastPrescriptionPrintUrl, "_blank", "noopener");
+  });
 
-  document.getElementById("patient-search").addEventListener("input", (event) => {
+  bindIfPresent("patient-search", "input", (event) => {
     loadPatients(event.target.value).catch((error) => setStatus(error.message, true));
   });
 
-  document.getElementById("appointment-patient-name").addEventListener("input", (event) => {
+  bindIfPresent("appointment-patient-name", "input", (event) => {
     window.clearTimeout(appointmentPatientSearchTimer);
     renderLocalAppointmentPatientSuggestions(event.target.value);
     appointmentPatientSearchTimer = window.setTimeout(() => {
@@ -683,7 +825,7 @@ function bindEvents() {
     }, 60);
   });
 
-  document.getElementById("checkin-form").addEventListener("submit", async (event) => {
+  bindIfPresent("checkin-form", "submit", async (event) => {
     event.preventDefault();
     try {
       setStatus("Saving...");
@@ -700,7 +842,7 @@ function bindEvents() {
     }
   });
 
-  document.getElementById("appointment-form").addEventListener("submit", async (event) => {
+  bindIfPresent("appointment-form", "submit", async (event) => {
     event.preventDefault();
     try {
       const data = formData(event.target);
@@ -720,12 +862,13 @@ function bindEvents() {
     }
   });
 
-  document.getElementById("prescription-form").addEventListener("submit", async (event) => {
+  bindIfPresent("prescription-form", "submit", async (event) => {
     event.preventDefault();
     try {
       const data = formData(event.target);
       data.patient_id = Number(data.patient_id);
       data.visit_id = data.visit_id ? Number(data.visit_id) : null;
+      data.symptom_entries = symptomEntries();
       data.items = [...document.querySelectorAll(".medicine-row")].map((row) => ({
         medicine_name: row.querySelector("[name=medicine_name]").value,
         dosage: row.querySelector("[name=dosage]").value,
@@ -739,14 +882,14 @@ function bindEvents() {
       });
       await loadQueue();
       if (state.selectedPatientId) await openPatientDetail(state.selectedPatientId);
+      setLastPrescriptionPrintUrl(result.print_url);
       setStatus("Prescription saved");
-      window.open(result.print_url, "_blank", "noopener");
     } catch (error) {
       setStatus(error.message, true);
     }
   });
 
-  document.getElementById("bill-form").addEventListener("submit", async (event) => {
+  bindIfPresent("bill-form", "submit", async (event) => {
     event.preventDefault();
     try {
       const data = formData(event.target);
@@ -778,6 +921,7 @@ async function start() {
   bindEvents();
   loadSymptomSuggestions();
   await loadSession();
+  startCalendarAutoRefresh();
   addMedicineRow({ frequency: "1-0-1" });
   await Promise.all([loadQueue(), loadPatients(), loadAppointments(), loadCalendarAppointments()]);
 }

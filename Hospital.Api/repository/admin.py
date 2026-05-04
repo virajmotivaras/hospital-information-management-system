@@ -1,4 +1,5 @@
 from pathlib import Path
+from pathlib import Path
 from shutil import copy2
 from types import MethodType
 
@@ -46,7 +47,14 @@ class DepartmentAdmin(admin.ModelAdmin):
 
 @admin.register(HospitalProfile)
 class HospitalProfileAdmin(admin.ModelAdmin):
-    list_display = ("hospital_name", "tagline", "appointment_duration_minutes", "backup_folder_path", "updated_at")
+    list_display = (
+        "hospital_name",
+        "tagline",
+        "appointment_duration_minutes",
+        "include_prescription_print_header",
+        "backup_folder_path",
+        "updated_at",
+    )
     actions = ["create_database_backup"]
 
     @admin.action(description="Create database backup now")
@@ -134,7 +142,7 @@ class AppointmentAdmin(admin.ModelAdmin):
 
 @admin.register(Prescription)
 class PrescriptionAdmin(admin.ModelAdmin):
-    search_fields = ("patient__full_name", "doctor_name", "diagnosis")
+    search_fields = ("patient__full_name", "doctor_name", "symptoms", "diagnosis", "examination_findings")
     list_display = ("patient", "doctor_name", "created_at", "follow_up_date")
     inlines = [PrescriptionItemInline]
 

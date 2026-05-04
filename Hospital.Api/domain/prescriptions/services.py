@@ -20,8 +20,33 @@ def write_prescription(data):
     if not items:
         raise ValidationError("Add at least one medicine.", "items")
 
+    symptom_entries = []
+    for item in data.get("symptom_entries", []):
+        symptom = (item.get("symptom") or "").strip()
+        if not symptom:
+            continue
+        days = item.get("days")
+        if days in ("", None):
+            days = None
+        else:
+            try:
+                days = int(days)
+            except (TypeError, ValueError):
+                raise ValidationError("Enter symptom duration as a number of days.", "symptom_entries")
+            if days < 0:
+                raise ValidationError("Symptom duration cannot be negative.", "symptom_entries")
+        symptom_entries.append({"symptom": symptom, "days": days})
+
     payload = dict(data)
     payload["items"] = items
+    payload["symptom_entries"] = symptom_entries
+    payload["symptoms"] = "\n".join(
+        f"{item['symptom']} ({item['days']} day{'s' if item['days'] != 1 else ''})"
+        if item["days"] is not None
+        else item["symptom"]
+        for item in symptom_entries
+    ) or data.get("symptoms", "")
+
     if payload.get("follow_up_date"):
         follow_up_date = parse_date(payload["follow_up_date"])
         if not follow_up_date:
